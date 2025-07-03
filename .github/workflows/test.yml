@@ -22,3 +22,5 @@ jobs:
         shell: bash
         run: |
           gh pr comment ${{ github.event.number }} --body "This is an automated comment"
+        env:
+          GH_TOKEN: ${{ github.token }}

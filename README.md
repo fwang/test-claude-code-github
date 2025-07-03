@@ -58,9 +58,3 @@ Run this in the project root to deploy it to prod.
 ```bash
 npx sst deploy --stage production
 ```
-
-Make sure to set your secret for prod as well.
-
-```bash
-sst secret set StripeSecretKey <YOUR_STRIPE_SECRET_TEST_KEY> --stage production
-```

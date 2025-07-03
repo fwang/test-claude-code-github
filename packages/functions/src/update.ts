@@ -1,22 +1,48 @@
 import { Resource } from "sst";
 import { Util } from "@notes/core/util";
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
-import { UpdateCommand, DynamoDBDocumentClient } from "@aws-sdk/lib-dynamodb";
+import { UpdateCommand, DynamoDBDocumentClient, GetCommand } from "@aws-sdk/lib-dynamodb";
+import { S3Client, DeleteObjectCommand } from "@aws-sdk/client-s3";
 
 const dynamoDb = DynamoDBDocumentClient.from(new DynamoDBClient({}));
+const s3Client = new S3Client({});
 
 export const main = Util.handler(async (event) => {
   const data = JSON.parse(event.body || "{}");
+  const userId = event.requestContext.authorizer?.iam.cognitoIdentity.identityId;
+  const noteId = event?.pathParameters?.id;
 
-  const params = {
+  // First, retrieve the existing note to check current attachment
+  const getParams = {
     TableName: Resource.Notes.name,
     Key: {
-      // The attributes of the item to be updated
-      userId: event.requestContext.authorizer?.iam.cognitoIdentity.identityId,
-      noteId: event?.pathParameters?.id, // The id of the note from the path
+      userId,
+      noteId,
     },
-    // 'UpdateExpression' defines the attributes to be updated
-    // 'ExpressionAttributeValues' defines the value in the update expression
+  };
+
+  const result = await dynamoDb.send(new GetCommand(getParams));
+  
+  // If the note exists and has an attachment, and the attachment is being changed/removed
+  if (result.Item && result.Item.attachment && result.Item.attachment !== data.attachment) {
+    try {
+      await s3Client.send(new DeleteObjectCommand({
+        Bucket: Resource.Uploads.name,
+        Key: result.Item.attachment,
+      }));
+    } catch (error) {
+      console.error("Failed to delete old S3 attachment:", error);
+      // Continue with note update even if S3 deletion fails
+    }
+  }
+
+  // Update the note with new data
+  const updateParams = {
+    TableName: Resource.Notes.name,
+    Key: {
+      userId,
+      noteId,
+    },
     UpdateExpression: "SET content = :content, attachment = :attachment",
     ExpressionAttributeValues: {
       ":attachment": data.attachment || null,
@@ -24,7 +50,7 @@ export const main = Util.handler(async (event) => {
     },
   };
 
-  await dynamoDb.send(new UpdateCommand(params));
+  await dynamoDb.send(new UpdateCommand(updateParams));
 
   return JSON.stringify({ status: true });
 });

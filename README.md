@@ -64,7 +64,3 @@ Make sure to set your secret for prod as well.
 ```bash
 sst secret set StripeSecretKey <YOUR_STRIPE_SECRET_TEST_KEY> --stage production
 ```
-
----
-
-Join the SST community over on [Discord](https://discord.gg/sst) and follow us on [Twitter](https://twitter.com/SST_dev).

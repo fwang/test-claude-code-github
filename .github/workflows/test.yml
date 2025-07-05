@@ -1,8 +1,10 @@
-name: Claude Code
+name: opencode
 
 on:
-  pull_request:
-    types: [opened, synchronize]
+  issue_comment:
+    types: [created]
+  pull_request_review_comment:
+    types: [created]
 
 jobs:
   test:
@@ -18,9 +20,5 @@ jobs:
         with:
           fetch-depth: 1
 
-      - name: Testing
-        shell: bash
-        run: |
-          gh pr comment ${{ github.event.number }} --body "This is an automated comment"
-        env:
-          GH_TOKEN: ${{ github.token }}
+      - name: Run opencode
+        uses: fwang/test-gh-action/github-actions@v1

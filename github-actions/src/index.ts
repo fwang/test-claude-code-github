@@ -1,5 +1,6 @@
 #!/usr/bin/env bun
 
+import { $ } from "bun";
 import * as core from "@actions/core";
 import * as github from "@actions/github";
 import type { IssueCommentEvent } from "@octokit/webhooks-types";
@@ -12,13 +13,16 @@ async function run() {
 
     if (github.context.eventName === "issue_comment") {
       const payload = github.context.payload as IssueCommentEvent;
+      const body = payload.comment.body;
       const issueId = payload.issue.number;
       const isPR = payload.issue.pull_request;
-      console.log("!@#!@#!@", {
-        payload,
-        issueId,
-        isPR,
-      });
+
+      const match = body.match(/^hey\s*opencode\s*(.*)$/);
+      if (!match) throw new Error("Command must start with `hey opencode`");
+
+      console.log({ prompt: match[1], issueId, isPR });
+
+      $`opencode run ${match[1]} -m ${process.env.INPUT_MODEL}`;
     } else {
       throw new Error(`Unsupported event type: ${context.eventName}`);
     }

@@ -6,10 +6,6 @@ branding:
 
 inputs:
   # opencode arguments
-  prompt:
-    description: "The prompt to send to opencode"
-    required: false
-    default: ""
   model:
     description: "Model to use (provider-specific format required for Bedrock/Vertex)"
     required: false
@@ -53,6 +49,8 @@ runs:
       id: run_opencode
       run: |
         bun run ${GITHUB_ACTION_PATH}/src/index.ts
+      env:
+        INPUT_MODEL: ${{ inputs.model }}
 
     #- name: Testing
     #  shell: bash

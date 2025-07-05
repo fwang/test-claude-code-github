@@ -6,6 +6,7 @@ on:
 
 jobs:
   test:
+    if: github.event_name == 'issue_comment' && startsWith(github.event.comment.body, 'hey opencode')
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -22,3 +23,5 @@ jobs:
         uses: ./github-actions
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        with:
+          model: anthropic/claude-sonnet-4-20250514

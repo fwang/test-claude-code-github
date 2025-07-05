@@ -17,7 +17,7 @@ async function run() {
       const issueId = payload.issue.number;
       const isPR = payload.issue.pull_request;
 
-      const match = body.match(/^hey\s*opencode\s*(.*)$/);
+      const match = body.match(/^hey\s*opencode,?\s*(.*)$/);
       if (!match) throw new Error("Command must start with `hey opencode`");
 
       console.log({ prompt: match[1], issueId, isPR });

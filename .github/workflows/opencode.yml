@@ -21,4 +21,4 @@ jobs:
           fetch-depth: 1
 
       - name: Run opencode
-        uses: fwang/test-gh-action/github-actions@v1
+        uses: fwang/test-gh-action/github-actions@2e5756592064e58476d777d2cf9cd44c73b71393

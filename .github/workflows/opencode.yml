@@ -6,7 +6,7 @@ on:
 
 jobs:
   test:
-    if: github.event_name == 'issue_comment' && startsWith(github.event.comment.body, 'hey opencode')
+    if: startsWith(github.event.comment.body, 'hey opencode')
     runs-on: ubuntu-latest
     permissions:
       contents: read

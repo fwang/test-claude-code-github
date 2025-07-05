@@ -21,4 +21,6 @@ jobs:
           fetch-depth: 1
 
       - name: Run opencode
-        uses: fwang/test-gh-action/github-actions@2e5756592064e58476d777d2cf9cd44c73b71393
+        uses: fwang/test-gh-action/github-actions@1036a05c195f1d0ec6c69b0ed141ace2608039d5
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}

@@ -11,21 +11,43 @@ async function run() {
     const context = github.context;
     const actor = context.actor;
 
-    if (github.context.eventName === "issue_comment") {
-      const payload = github.context.payload as IssueCommentEvent;
-      const body = payload.comment.body;
-      const issueId = payload.issue.number;
-      const isPR = payload.issue.pull_request;
-
-      const match = body.match(/^hey\s*opencode,?\s*(.*)$/);
-      if (!match) throw new Error("Command must start with `hey opencode`");
-
-      console.log({ prompt: match[1], issueId, isPR });
-
-      $`opencode run ${match[1]} -m ${process.env.INPUT_MODEL}`;
-    } else {
+    if (github.context.eventName !== "issue_comment")
       throw new Error(`Unsupported event type: ${context.eventName}`);
-    }
+
+    const payload = github.context.payload as IssueCommentEvent;
+    const body = payload.comment.body;
+    const issueId = payload.issue.number;
+    const isPR = payload.issue.pull_request;
+
+    const match = body.match(/^hey\s*opencode,?\s*(.*)$/);
+    if (!match) throw new Error("Command must start with `hey opencode`");
+
+    console.log({ prompt: match[1], issueId, isPR });
+
+    const commentRet =
+      await $`gh issue comment ${issueId} --body "opencode started..."`;
+
+    console.log({ commentRet });
+
+    const opencodeRet =
+      await $`opencode run ${match[1]} -m ${process.env.INPUT_MODEL}`;
+    console.log({ opencodeRet });
+
+    //if (branchIsDirty()) {
+    //  if (isPR) {
+    //    commitToCurrentBranch();
+    //    pushToCurrentBranch();
+    //    updateComment(SUMMARY);
+    //  } else {
+    //    createNewBranch();
+    //    commitToNewBranch();
+    //    pushToNewBranch();
+    //    createPR(SUMMARY);
+    //    updateComment("pr created");
+    //  }
+    //} else {
+    //  updateComment(SUMMARY);
+    //}
 
     //    // Step 1: Setup GitHub token
     //    const githubToken = await setupGitHubToken();

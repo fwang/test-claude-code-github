@@ -51,6 +51,7 @@ runs:
         bun run ${GITHUB_ACTION_PATH}/src/index.ts
       env:
         INPUT_MODEL: ${{ inputs.model }}
+        GH_TOKEN: ${{ github.token }}
 
     #- name: Testing
     #  shell: bash

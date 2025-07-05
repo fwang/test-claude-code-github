@@ -38,19 +38,15 @@ runs:
       with:
         bun-version: 1.2.16
 
-    #- name: Install Dependencies
-    #  shell: bash
-    #  run: |
-    #    cd ${GITHUB_ACTION_PATH}
-    #    bun install
+    - name: Install Dependencies
+      shell: bash
+      run: |
+        cd ${GITHUB_ACTION_PATH}
+        bun install
 
     - name: Install opencode
       shell: bash
       run: curl -fsSL https://opencode.ai/install | bash
-
-    - name: Print out GITHUB_ACTION_PATH
-      shell: bash
-      run: echo ${GITHUB_ACTION_PATH}
 
     - name: Run opencode
       shell: bash

@@ -47,24 +47,24 @@ async function run() {
 
     console.log({ opencodeRet });
 
-    //if (branchIsDirty()) {
-    //  if (isPR) {
-    //    commitToCurrentBranch();
-    //    pushToCurrentBranch();
-    //    updateComment(SUMMARY);
-    //  } else {
-    //    createNewBranch();
-    //    commitToNewBranch();
-    //    pushToNewBranch();
-    //    createPR(SUMMARY);
-    //    updateComment("pr created");
-    //  }
-    //} else {
-    //  updateComment(SUMMARY);
-    //}
+    if (await branchIsDirty()) {
+      console.log("!@#!@#!@# Branch is dirty");
+      //  if (isPR) {
+      //    commitToCurrentBranch();
+      //    pushToCurrentBranch();
+      //    updateComment(SUMMARY);
+      //  } else {
+      //    createNewBranch();
+      //    commitToNewBranch();
+      //    pushToNewBranch();
+      //    createPR(SUMMARY);
+      //    updateComment("pr created");
+      //  }
+      //} else {
+      //  updateComment(SUMMARY);
+    }
 
     async function createComment() {
-      //const commentRet = await $`gh issue comment ${issueId} --body "opencode started..."`;
       const { owner, repo } = context.repo;
       const issueId = payload.issue.number;
       const runId = process.env.GITHUB_RUN_ID!;
@@ -139,6 +139,11 @@ query($owner: String!, $repo: String!, $number: Int!) {
         "Here is the list of comments:",
         ...(commentsContext.length > 0 ? commentsContext : ["No comments"]),
       ].join("\n");
+    }
+
+    async function branchIsDirty() {
+      const ret = await $`git status --porcelain`;
+      return ret.stdout.toString().trim().length > 0;
     }
   } catch (e: any) {
     core.setFailed(`Prepare step failed with error: ${e.message}`);

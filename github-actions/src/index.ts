@@ -42,26 +42,25 @@ async function run() {
     const promptData = await fetchPromptData();
     console.log({ promptData });
 
-    const opencodeRet =
-      await $`opencode run ${prompt} ${promptData} -m ${process.env.INPUT_MODEL}`;
-
-    console.log({ opencodeRet });
+    const response = await runOpencode();
+    console.log({ response });
 
     if (await branchIsDirty()) {
-      console.log("!@#!@#!@# Branch is dirty");
-      //  if (isPR) {
-      //    commitToCurrentBranch();
-      //    pushToCurrentBranch();
-      //    updateComment(SUMMARY);
-      //  } else {
-      //    createNewBranch();
-      //    commitToNewBranch();
-      //    pushToNewBranch();
-      //    createPR(SUMMARY);
-      //    updateComment("pr created");
-      //  }
-      //} else {
-      //  updateComment(SUMMARY);
+      console.log("!@#!@#!@# Branch is DIRTY");
+      if (isPR) {
+        //    commitToCurrentBranch();
+        //    pushToCurrentBranch();
+        //    updateComment(SUMMARY);
+      } else {
+        //    createNewBranch();
+        //    commitToNewBranch();
+        //    pushToNewBranch();
+        //    createPR(SUMMARY);
+        //    updateComment("pr created");
+      }
+    } else {
+      console.log("!@#!@#!@# Branch is CLEAN");
+      updateComment(response);
     }
 
     async function createComment() {
@@ -77,6 +76,16 @@ async function run() {
           "",
           `[view run](${`/${owner}/${repo}/actions/runs/${runId}`})`,
         ].join("\n"),
+      });
+    }
+
+    async function updateComment(content: string) {
+      const { owner, repo } = context.repo;
+      return await octoRest.rest.issues.updateComment({
+        owner,
+        repo,
+        comment_id: comment.data.id,
+        body: content,
       });
     }
 
@@ -139,6 +148,12 @@ query($owner: String!, $repo: String!, $number: Int!) {
         "Here is the list of comments:",
         ...(commentsContext.length > 0 ? commentsContext : ["No comments"]),
       ].join("\n");
+    }
+
+    async function runOpencode() {
+      const ret =
+        await $`opencode run ${prompt} ${promptData} -m ${process.env.INPUT_MODEL}`;
+      return ret.stdout.toString().trim();
     }
 
     async function branchIsDirty() {

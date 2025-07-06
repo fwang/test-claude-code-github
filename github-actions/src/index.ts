@@ -168,19 +168,16 @@ query($owner: String!, $repo: String!, $number: Int!) {
           const id = parseInt(c.databaseId);
           return id !== comment.data.id && id !== payload.comment.id;
         })
-        .map((c) => `- ${c.author.login} at ${c.createdAt}: ${c.body}`);
+        .map((c) => `  - ${c.author.login} at ${c.createdAt}: ${c.body}`);
 
       return [
-        "",
         "Here is the context for the issue:",
         `- Title: ${issue.title}`,
         `- Body: ${issue.body}`,
         `- Author: ${issue.author.login}`,
         `- Created At: ${issue.createdAt}`,
         `- State: ${issue.state}`,
-        "",
-        "Here is the list of comments:",
-        ...(comments.length > 0 ? comments : ["No comments"]),
+        ...(comments.length > 0 ? ["- Comments:", ...comments] : []),
       ].join("\n");
     }
 
@@ -294,7 +291,6 @@ query($owner: String!, $repo: String!, $number: Int!) {
       });
 
       return [
-        "",
         "Here is the context for the pull request:",
         `- Title: ${pr.title}`,
         `- Body: ${pr.body}`,
@@ -314,9 +310,9 @@ query($owner: String!, $repo: String!, $number: Int!) {
     }
 
     async function runOpencode(prompt: string, opts?: { continue?: boolean }) {
-      const ret = await $`opencode run ${prompt} -m ${process.env.INPUT_MODEL}${
-        opts?.continue ? " --continue" : ""
-      }`;
+      const ret = opts?.continue
+        ? await $`opencode run ${prompt} -m ${process.env.INPUT_MODEL} --continue`
+        : await $`opencode run ${prompt} -m ${process.env.INPUT_MODEL}`;
       return ret.stdout.toString().trim();
     }
 

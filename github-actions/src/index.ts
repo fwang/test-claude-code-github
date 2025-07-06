@@ -138,7 +138,8 @@ query($owner: String!, $repo: String!, $number: Int!) {
         .filter((c) => {
           const id = parseInt(c.id);
           console.log({
-            id,
+            id: c.id,
+            databaseId: c.databaseId,
             commentId: comment.data.id,
             payloadId: payload.comment.id,
           });

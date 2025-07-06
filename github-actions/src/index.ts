@@ -136,13 +136,7 @@ query($owner: String!, $repo: String!, $number: Int!) {
       const comments = issue.comments?.nodes || [];
       const commentsContext = comments
         .filter((c) => {
-          const id = parseInt(c.id);
-          console.log({
-            id: c.id,
-            databaseId: c.databaseId,
-            commentId: comment.data.id,
-            payloadId: payload.comment.id,
-          });
+          const id = parseInt(c.databaseId);
           return id !== comment.data.id && id !== payload.comment.id;
         })
         .map((c) => `- ${c.author.login} at ${c.createdAt}: ${c.body}`);

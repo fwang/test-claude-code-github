@@ -6,13 +6,12 @@ import { graphql } from "@octokit/graphql";
 import * as core from "@actions/core";
 import * as github from "@actions/github";
 import type { IssueCommentEvent } from "@octokit/webhooks-types";
-import type { IssueQueryResponse } from "./types";
+import type { IssueQueryResponse, PullRequestQueryResponse } from "./types";
 
 const octoRest = new Octokit({
   auth: process.env.GITHUB_TOKEN,
 });
 const octoGraph = graphql.defaults({
-  //baseUrl: GITHUB_API_URL,
   headers: {
     authorization: `token ${process.env.GITHUB_TOKEN}`,
   },
@@ -21,82 +20,115 @@ const octoGraph = graphql.defaults({
 async function run() {
   try {
     const context = github.context;
-    const actor = context.actor;
+    const { owner, repo } = context.repo;
 
     if (github.context.eventName !== "issue_comment")
       throw new Error(`Unsupported event type: ${context.eventName}`);
 
     const payload = github.context.payload as IssueCommentEvent;
+    const issueId = payload.issue.number;
     const body = payload.comment.body;
     const isPR = payload.issue.pull_request;
 
     const match = body.match(/^hey\s*opencode,?\s*(.*)$/);
     if (!match?.[1]) throw new Error("Command must start with `hey opencode`");
-    const prompt = match[1];
+    const userPrompt = match[1];
 
-    console.log({ prompt, isPR });
+    console.log({ prompt: userPrompt, isPR });
 
-    const comment = await createComment();
+    const comment = await createComment(buildComment("opencode started..."));
     console.log({ comment });
 
-    const promptData = await fetchPromptData();
-    console.log({ promptData });
+    const promptData = isPR
+      ? await fetchPromptDataForPR()
+      : await fetchPromptDataForIssue();
 
-    const response = await runOpencode();
+    const response = await runOpencode(`${userPrompt}\n\n${promptData}`);
     console.log({ response });
 
     if (await branchIsDirty()) {
-      console.log("!@#!@#!@# Branch is DIRTY");
+      const summary = await runOpencode(
+        "Create a short summary of the changes in less than 100 characters.",
+        { continue: true }
+      );
+      console.log({ summary });
       if (isPR) {
-        //    commitToCurrentBranch();
-        //    pushToCurrentBranch();
-        //    updateComment(SUMMARY);
+        await pushToCurrentBranch(summary);
+        await updateComment(buildComment(response));
       } else {
-        //    createNewBranch();
-        //    commitToNewBranch();
-        //    pushToNewBranch();
-        //    createPR(SUMMARY);
-        //    updateComment("pr created");
+        const branch = await pushToNewBranch(summary);
+        const prNum = await createPR(branch, summary);
+        await updateComment(
+          buildComment(`opencode created pull request #${prNum}`)
+        );
       }
     } else {
-      console.log("!@#!@#!@# Branch is CLEAN");
       await updateComment(response);
     }
 
-    async function createComment() {
-      const { owner, repo } = context.repo;
-      const issueId = payload.issue.number;
+    function buildComment(content: string, opts?: { share?: string }) {
       const runId = process.env.GITHUB_RUN_ID!;
+      const runLink = `/${owner}/${repo}/actions/runs/${runId}`;
+      return [
+        content,
+        "",
+        opts?.share ? `[shared session](${opts?.share}) | ` : "",
+        `[view run](${runLink})`,
+      ].join("\n");
+    }
+
+    async function createComment(body: string) {
       return await octoRest.rest.issues.createComment({
         owner,
         repo,
         issue_number: issueId,
-        body: [
-          "opencode started...",
-          "",
-          `[view run](${`/${owner}/${repo}/actions/runs/${runId}`})`,
-        ].join("\n"),
+        body,
       });
     }
 
-    async function updateComment(content: string) {
-      const { owner, repo } = context.repo;
-      const runId = process.env.GITHUB_RUN_ID!;
+    async function updateComment(body: string) {
       return await octoRest.rest.issues.updateComment({
         owner,
         repo,
         comment_id: comment.data.id,
-        body: [
-          content,
-          "",
-          `[view run](${`/${owner}/${repo}/actions/runs/${runId}`})`,
-        ].join("\n"),
+        body,
       });
     }
 
-    async function fetchPromptData() {
-      const { owner, repo } = context.repo;
-      const issueId = payload.issue.number;
+    async function pushToCurrentBranch(summary: string) {
+      await $`git add .`;
+      await $`git commit -m "${summary}"`;
+    }
+
+    async function pushToNewBranch(summary: string) {
+      const timestamp = new Date()
+        .toISOString()
+        .replace(/[:-]/g, "")
+        .replace(/\.\d{3}Z/, "")
+        .split("T")
+        .join("_");
+      const branch = `opencode/${isPR ? "pr" : "issue"}${issueId}-${timestamp}`;
+      await $`git checkout -b ${branch}`;
+      await $`git add .`;
+      await $`git commit -m "${summary}"`;
+      await $`git push -u origin ${branch}`;
+      return branch;
+    }
+
+    async function createPR(branch: string, summary: string) {
+      const repoData = await octoRest.rest.repos.get({ owner, repo });
+      const pr = await octoRest.rest.pulls.create({
+        owner,
+        repo,
+        head: branch,
+        base: repoData.data.default_branch,
+        title: summary,
+        body: buildComment(`${response}\n\nCloses #${issueId}`),
+      });
+      return pr.data.number;
+    }
+
+    async function fetchPromptDataForIssue() {
       const issueResult = await octoGraph<IssueQueryResponse>(
         `
 query($owner: String!, $repo: String!, $number: Int!) {
@@ -133,8 +165,7 @@ query($owner: String!, $repo: String!, $number: Int!) {
       const issue = issueResult.repository.issue;
       if (!issue) throw new Error(`Issue #${issueId} not found`);
 
-      const comments = issue.comments?.nodes || [];
-      const commentsContext = comments
+      const comments = (issue.comments?.nodes || [])
         .filter((c) => {
           const id = parseInt(c.databaseId);
           return id !== comment.data.id && id !== payload.comment.id;
@@ -151,13 +182,143 @@ query($owner: String!, $repo: String!, $number: Int!) {
         `- State: ${issue.state}`,
         "",
         "Here is the list of comments:",
-        ...(commentsContext.length > 0 ? commentsContext : ["No comments"]),
+        ...(comments.length > 0 ? comments : ["No comments"]),
       ].join("\n");
     }
 
-    async function runOpencode() {
-      const ret =
-        await $`opencode run ${prompt} ${promptData} -m ${process.env.INPUT_MODEL}`;
+    async function fetchPromptDataForPR() {
+      const prResult = await octoGraph<PullRequestQueryResponse>(
+        `
+query($owner: String!, $repo: String!, $number: Int!) {
+  repository(owner: $owner, name: $repo) {
+    pullRequest(number: $number) {
+      title
+      body
+      author {
+        login
+      }
+      baseRefName
+      headRefName
+      headRefOid
+      createdAt
+      additions
+      deletions
+      state
+      commits(first: 100) {
+        totalCount
+        nodes {
+          commit {
+            oid
+            message
+            author {
+              name
+              email
+            }
+          }
+        }
+      }
+      files(first: 100) {
+        nodes {
+          path
+          additions
+          deletions
+          changeType
+        }
+      }
+      comments(first: 100) {
+        nodes {
+          id
+          databaseId
+          body
+          author {
+            login
+          }
+          createdAt
+        }
+      }
+      reviews(first: 100) {
+        nodes {
+          id
+          databaseId
+          author {
+            login
+          }
+          body
+          state
+          submittedAt
+          comments(first: 100) {
+            nodes {
+              id
+              databaseId
+              body
+              path
+              line
+              author {
+                login
+              }
+              createdAt
+            }
+          }
+        }
+      }
+    }
+  }
+}`,
+        {
+          owner,
+          repo,
+          number: issueId,
+        }
+      );
+
+      const pr = prResult.repository.pullRequest;
+      if (!pr) throw new Error(`PR #${issueId} not found`);
+
+      const comments = (pr.comments?.nodes || [])
+        .filter((c) => {
+          const id = parseInt(c.databaseId);
+          return id !== comment.data.id && id !== payload.comment.id;
+        })
+        .map((c) => `  - ${c.author.login} at ${c.createdAt}: ${c.body}`);
+
+      const files = (pr.files.nodes || []).map(
+        (f) => `  - ${f.path} (${f.changeType}) +${f.additions}/-${f.deletions}`
+      );
+      const reviewData = (pr.reviews.nodes || []).map((r) => {
+        const comments = (r.comments.nodes || []).map(
+          (c) => `      - ${c.path}:${c.line ?? "?"}: ${c.body}`
+        );
+        return [
+          `  - ${r.author.login} at ${r.submittedAt}:`,
+          `    - Review body: ${r.body}`,
+          ...(comments.length > 0 ? ["    - Comments:", ...comments] : []),
+        ];
+      });
+
+      return [
+        "",
+        "Here is the context for the pull request:",
+        `- Title: ${pr.title}`,
+        `- Body: ${pr.body}`,
+        `- Author: ${pr.author.login}`,
+        `- Created At: ${pr.createdAt}`,
+        `- Base Branch: ${pr.baseRefName}`,
+        `- Head Branch: ${pr.headRefName}`,
+        `- State: ${pr.state}`,
+        `- Additions: ${pr.additions}`,
+        `- Deletions: ${pr.deletions}`,
+        `- Total Commits: ${pr.commits.totalCount}`,
+        `- Changed Files: ${pr.files.nodes.length} files`,
+        ...(comments.length > 0 ? ["- Comments:", ...comments] : []),
+        ...(files.length > 0 ? ["- Changed files:", ...files] : []),
+        ...(reviewData.length > 0 ? ["- Reviews:", ...reviewData] : []),
+      ].join("\n");
+    }
+
+    async function runOpencode(prompt: string, opts?: { continue?: boolean }) {
+      const ret = await $`opencode run ${prompt} -m ${process.env.INPUT_MODEL}${
+        opts?.continue ? " --continue" : ""
+      }`;
       return ret.stdout.toString().trim();
     }
 

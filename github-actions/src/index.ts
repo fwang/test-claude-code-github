@@ -81,11 +81,16 @@ async function run() {
 
     async function updateComment(content: string) {
       const { owner, repo } = context.repo;
+      const runId = process.env.GITHUB_RUN_ID!;
       return await octoRest.rest.issues.updateComment({
         owner,
         repo,
         comment_id: comment.data.id,
-        body: content,
+        body: [
+          content,
+          "",
+          `[view run](${`/${owner}/${repo}/actions/runs/${runId}`})`,
+        ].join("\n"),
       });
     }
 

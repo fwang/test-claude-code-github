@@ -9,13 +9,13 @@ import type { IssueCommentEvent } from "@octokit/webhooks-types";
 import type { IssueQueryResponse } from "./types";
 
 const octoRest = new Octokit({
-  //  auth: process.env.GH_TOKEN,
+  auth: process.env.GITHUB_TOKEN,
 });
 const octoGraph = graphql.defaults({
   //baseUrl: GITHUB_API_URL,
-  //headers: {
-  //  authorization: `token ${token}`,
-  //},
+  headers: {
+    authorization: `token ${process.env.GITHUB_TOKEN}`,
+  },
 });
 
 async function run() {

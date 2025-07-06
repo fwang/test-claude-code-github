@@ -54,13 +54,11 @@ async function run() {
       console.log({ summary });
       if (isPR) {
         await pushToCurrentBranch(summary);
-        await updateComment(buildComment(response));
+        await updateComment(response);
       } else {
         const branch = await pushToNewBranch(summary);
         const prNum = await createPR(branch, summary);
-        await updateComment(
-          buildComment(`opencode created pull request #${prNum}`)
-        );
+        await updateComment(`opencode created pull request #${prNum}`);
       }
     } else {
       await updateComment(response);
@@ -91,7 +89,7 @@ async function run() {
         owner,
         repo,
         comment_id: comment.data.id,
-        body,
+        body: buildComment(body),
       });
     }
 

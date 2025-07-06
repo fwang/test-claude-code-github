@@ -60,7 +60,7 @@ async function run() {
       }
     } else {
       console.log("!@#!@#!@# Branch is CLEAN");
-      updateComment(response);
+      await updateComment(response);
     }
 
     async function createComment() {
@@ -132,6 +132,11 @@ query($owner: String!, $repo: String!, $number: Int!) {
       const commentsContext = comments
         .filter((c) => {
           const id = parseInt(c.id);
+          console.log({
+            id,
+            commentId: comment.data.id,
+            payloadId: payload.comment.id,
+          });
           return id !== comment.data.id && id !== payload.comment.id;
         })
         .map((c) => `- ${c.author.login} at ${c.createdAt}: ${c.body}`);

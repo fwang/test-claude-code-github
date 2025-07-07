@@ -50,7 +50,7 @@ async function run() {
       const summary =
         (await runOpencode("Describe the changes in less than 40 characters.", {
           continue: true,
-        })) ?? `Closes #${issueId}`;
+        })) || `Closes #${issueId}`;
       if (isPR) {
         await pushToCurrentBranch(summary);
         await updateComment(response);

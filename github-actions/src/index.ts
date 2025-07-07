@@ -47,11 +47,10 @@ async function run() {
     const response = await runOpencode(`${userPrompt}\n\n${promptData}`);
 
     if (await branchIsDirty()) {
-      const summary = await runOpencode(
-        "Describe the changes in less than 40 characters.",
-        { continue: true }
-      );
-      console.log(`!@#!@# summary: |${summary}|`);
+      const summary =
+        (await runOpencode("Describe the changes in less than 40 characters.", {
+          continue: true,
+        })) ?? `Closes #${issueId}`;
       if (isPR) {
         await pushToCurrentBranch(summary);
         await updateComment(response);
@@ -68,12 +67,9 @@ async function run() {
       await updateComment(response);
     }
   } catch (e: any) {
-    console.error("!@#! ERRRRR", e);
+    console.error(e);
     let msg = e;
     if (e instanceof $.ShellError) {
-      // TODO
-      console.error("!@#! STDOUT", e.stdout.toString());
-      console.error("!@#! STDERR", e.stderr.toString());
       msg = e.stderr.toString();
     } else if (e instanceof Error) {
       msg = e.message;
@@ -166,10 +162,9 @@ async function runOpencode(prompt: string, opts?: { continue?: boolean }) {
   console.log("Running opencode...");
   const promptPath = path.join(os.tmpdir(), "PROMPT");
   await Bun.write(promptPath, prompt);
-  const ret = opts?.continue
-    ? await $`cat ${promptPath} | opencode run -m ${process.env.INPUT_MODEL} --continue --print-logs`
-    : await $`cat ${promptPath} | opencode run -m ${process.env.INPUT_MODEL}`;
-
+  const ret = await $`cat ${promptPath} | opencode run -m ${
+    process.env.INPUT_MODEL
+  }${opts?.continue ? " --continue" : ""}`;
   return ret.stdout.toString().trim();
 }
 

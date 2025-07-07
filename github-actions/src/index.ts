@@ -167,7 +167,7 @@ async function runOpencode(prompt: string, opts?: { continue?: boolean }) {
   const promptPath = path.join(os.tmpdir(), "PROMPT");
   await Bun.write(promptPath, prompt);
   const ret = opts?.continue
-    ? await $`cat ${promptPath} | opencode run -m ${process.env.INPUT_MODEL} --continue`
+    ? await $`cat ${promptPath} | opencode run -m ${process.env.INPUT_MODEL} --continue --print-logs`
     : await $`cat ${promptPath} | opencode run -m ${process.env.INPUT_MODEL}`;
 
   return ret.stdout.toString().trim();

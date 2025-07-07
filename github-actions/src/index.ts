@@ -126,6 +126,8 @@ async function pushToNewBranch(summary: string) {
     .split("T")
     .join("_");
   const branch = `opencode/${isPR ? "pr" : "issue"}${issueId}-${timestamp}`;
+  // TODO
+  console.log({ GITHUB_TOKEN: process.env.GITHUB_TOKEN });
   await $`git checkout -b ${branch}`;
   await $`git config --global user.email "runner@opencode.ai"`;
   await $`git config --global user.name "opencode"`;

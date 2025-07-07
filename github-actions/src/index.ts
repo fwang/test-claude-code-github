@@ -1,5 +1,7 @@
 #!/usr/bin/env bun
 
+import os from "os";
+import path from "path";
 import { $ } from "bun";
 import { Octokit } from "@octokit/rest";
 import { graphql } from "@octokit/graphql";
@@ -35,18 +37,14 @@ async function run() {
     if (!match?.[1]) throw new Error("Command must start with `hey opencode`");
     const userPrompt = match[1];
 
-    console.log({ prompt: userPrompt, isPR });
-
-    const comment = await createComment(buildComment("opencode started..."));
+    const comment = await createComment("opencode started...");
     commentId = comment.data.id;
-    console.log({ comment });
 
     const promptData = isPR
       ? await fetchPromptDataForPR()
       : await fetchPromptDataForIssue();
 
     const response = await runOpencode(`${userPrompt}\n\n${promptData}`);
-    console.log({ response });
 
     if (await branchIsDirty()) {
       const summary = await runOpencode(
@@ -69,6 +67,7 @@ async function run() {
       await updateComment(response);
     }
   } catch (e: any) {
+    console.error("!@#! ERRRRR", e);
     let msg = e;
     if (e instanceof $.ShellError) {
       // TODO
@@ -102,15 +101,17 @@ function buildComment(content: string, opts?: { share?: string }) {
 }
 
 async function createComment(body: string) {
+  console.log("Creatinig comment...");
   return await octoRest.rest.issues.createComment({
     owner,
     repo,
     issue_number: issueId,
-    body,
+    body: buildComment(body),
   });
 }
 
 async function updateComment(body: string) {
+  console.log("Updating comment...");
   return await octoRest.rest.issues.updateComment({
     owner,
     repo,
@@ -120,6 +121,7 @@ async function updateComment(body: string) {
 }
 
 async function pushToCurrentBranch(summary: string) {
+  console.log("Pushing to current branch...");
   await $`git config --global user.email "runner@opencode.ai"`;
   await $`git config --global user.name "opencode"`;
   await $`git add .`;
@@ -128,6 +130,7 @@ async function pushToCurrentBranch(summary: string) {
 }
 
 async function pushToNewBranch(summary: string) {
+  console.log("Pushing to new branch...");
   const timestamp = new Date()
     .toISOString()
     .replace(/[:-]/g, "")
@@ -145,6 +148,7 @@ async function pushToNewBranch(summary: string) {
 }
 
 async function createPR(branch: string, title: string, body: string) {
+  console.log("Creating pull request...");
   const repoData = await octoRest.rest.repos.get({ owner, repo });
   const pr = await octoRest.rest.pulls.create({
     owner,
@@ -158,19 +162,24 @@ async function createPR(branch: string, title: string, body: string) {
 }
 
 async function runOpencode(prompt: string, opts?: { continue?: boolean }) {
+  console.log("Running opencode...");
+  const promptPath = path.join(os.tmpdir(), "PROMPT");
+  await Bun.write(promptPath, prompt);
   const ret = opts?.continue
-    ? await $`opencode run ${prompt} -m ${process.env.INPUT_MODEL} --continue`
-    : await $`opencode run ${prompt} -m ${process.env.INPUT_MODEL}`;
+    ? await $`cat ${promptPath} | opencode run -m ${process.env.INPUT_MODEL} --continue`
+    : await $`cat ${promptPath} | opencode run -m ${process.env.INPUT_MODEL}`;
 
   return ret.stdout.toString().trim();
 }
 
 async function branchIsDirty() {
+  console.log("Checking if branch is dirty...");
   const ret = await $`git status --porcelain`;
   return ret.stdout.toString().trim().length > 0;
 }
 
 async function fetchPromptDataForIssue() {
+  console.log("Fetching prompt data for issue...");
   const issueResult = await octoGraph<IssueQueryResponse>(
     `
 query($owner: String!, $repo: String!, $number: Int!) {
@@ -226,6 +235,7 @@ query($owner: String!, $repo: String!, $number: Int!) {
 }
 
 async function fetchPromptDataForPR() {
+  console.log("Fetching prompt data for PR...");
   const prResult = await octoGraph<PullRequestQueryResponse>(
     `
 query($owner: String!, $repo: String!, $number: Int!) {

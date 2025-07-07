@@ -51,6 +51,7 @@ async function run() {
         "Describe the changes in less than 40 characters.",
         { continue: true }
       );
+      console.log(`!@#!@# summary: |${summary}|`);
       if (isPR) {
         await pushToCurrentBranch(summary);
         await updateComment(response);

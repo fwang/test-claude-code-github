@@ -162,9 +162,12 @@ async function runOpencode(prompt: string, opts?: { continue?: boolean }) {
   console.log("Running opencode...");
   const promptPath = path.join(os.tmpdir(), "PROMPT");
   await Bun.write(promptPath, prompt);
+  // TODO
   const ret = await $`cat ${promptPath} | opencode run -m ${
     process.env.INPUT_MODEL
-  } ${opts?.continue ? "--continue" : ""}`;
+  } ${opts?.continue ? "--continue" : ""} ${
+    opts?.continue ? "--print-logs" : ""
+  }`;
   return ret.stdout.toString().trim();
 }
 

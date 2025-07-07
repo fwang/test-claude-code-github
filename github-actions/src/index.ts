@@ -146,8 +146,16 @@ async function createPR(branch: string, title: string, body: string) {
 
 async function runOpencode(prompt: string, opts?: { continue?: boolean }) {
   const ret = opts?.continue
-    ? await $`opencode run ${prompt} -m ${process.env.INPUT_MODEL} --continue`
-    : await $`opencode run ${prompt} -m ${process.env.INPUT_MODEL}`;
+    ? await $`opencode run ${prompt} -m ${process.env.INPUT_MODEL} --continue`.nothrow()
+    : await $`opencode run ${prompt} -m ${process.env.INPUT_MODEL}`.nothrow();
+
+  // TODO
+  if (ret.exitCode !== 0) {
+    console.log("EXIT CODE", ret.exitCode);
+    console.log("STDOUT", ret.stdout.toString());
+    console.log("STDERR", ret.stderr.toString());
+    throw new Error("opencode failed");
+  }
   return ret.stdout.toString().trim();
 }
 

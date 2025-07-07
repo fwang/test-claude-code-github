@@ -69,8 +69,17 @@ async function run() {
       await updateComment(response);
     }
   } catch (e: any) {
-    if (commentId) await updateComment(e.message);
-    core.setFailed(`opencode failed with error: ${e.message}`);
+    let msg = e;
+    if (e instanceof $.ShellError) {
+      // TODO
+      console.error("!@#! STDOUT", e.stdout.toString());
+      console.error("!@#! STDERR", e.stderr.toString());
+      msg = e.stderr.toString();
+    } else if (e instanceof Error) {
+      msg = e.message;
+    }
+    if (commentId) await updateComment(msg);
+    core.setFailed(`opencode failed with error: ${msg}`);
     // Also output the clean error message for the action to capture
     //core.setOutput("prepare_error", e.message);
     process.exit(1);

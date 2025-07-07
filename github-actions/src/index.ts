@@ -50,10 +50,9 @@ async function run() {
 
     if (await branchIsDirty()) {
       const summary = await runOpencode(
-        "Create a short summary of the changes in less than 100 characters.",
+        "Describe the changes in less than 40 characters.",
         { continue: true }
       );
-      console.log({ summary });
       if (isPR) {
         await pushToCurrentBranch(summary);
         await updateComment(response);
@@ -112,8 +111,11 @@ async function updateComment(body: string) {
 }
 
 async function pushToCurrentBranch(summary: string) {
+  await $`git config --global user.email "runner@opencode.ai"`;
+  await $`git config --global user.name "opencode"`;
   await $`git add .`;
   await $`git commit -m "${summary}"`;
+  await $`git push`;
 }
 
 async function pushToNewBranch(summary: string) {
@@ -125,6 +127,8 @@ async function pushToNewBranch(summary: string) {
     .join("_");
   const branch = `opencode/${isPR ? "pr" : "issue"}${issueId}-${timestamp}`;
   await $`git checkout -b ${branch}`;
+  await $`git config --global user.email "runner@opencode.ai"`;
+  await $`git config --global user.name "opencode"`;
   await $`git add .`;
   await $`git commit -m "${summary}"`;
   await $`git push -u origin ${branch}`;
@@ -146,16 +150,9 @@ async function createPR(branch: string, title: string, body: string) {
 
 async function runOpencode(prompt: string, opts?: { continue?: boolean }) {
   const ret = opts?.continue
-    ? await $`opencode run ${prompt} -m ${process.env.INPUT_MODEL} --continue`.nothrow()
-    : await $`opencode run ${prompt} -m ${process.env.INPUT_MODEL}`.nothrow();
+    ? await $`opencode run ${prompt} -m ${process.env.INPUT_MODEL} --continue`
+    : await $`opencode run ${prompt} -m ${process.env.INPUT_MODEL}`;
 
-  // TODO
-  if (ret.exitCode !== 0) {
-    console.log("EXIT CODE", ret.exitCode);
-    console.log("STDOUT", ret.stdout.toString());
-    console.log("STDERR", ret.stderr.toString());
-    throw new Error("opencode failed");
-  }
   return ret.stdout.toString().trim();
 }
 

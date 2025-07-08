@@ -29,6 +29,8 @@ const issueId = payload.issue.number;
 const body = payload.comment.body;
 const isPR = payload.issue.pull_request;
 
+let octRest: Octokit;
+let octGraph: typeof graphql;
 let commentId: number;
 
 async function run() {
@@ -36,6 +38,8 @@ async function run() {
     const match = body.match(/^hey\s*opencode,?\s*(.*)$/);
     if (!match?.[1]) throw new Error("Command must start with `hey opencode`");
     const userPrompt = match[1];
+
+    const token = await generateGitHubToken();
 
     const comment = await createComment("opencode started...");
     commentId = comment.data.id;
@@ -84,6 +88,17 @@ async function run() {
 
 if (import.meta.main) {
   run();
+}
+
+async function generateGitHubToken() {
+  const oidcToken = await core.getIDToken("claude-code-github-action");
+  console.log("OIDC Token:", oidcToken);
+  throw new Error("manual");
+  return oidcToken;
+  //const token = await octoRest.rest.apps.createInstallationToken({
+  //  installation_id: process.env.GITHUB_APP_INSTALLATION_ID!,
+  //});
+  //return token.data.token;
 }
 
 function buildComment(content: string, opts?: { share?: string }) {

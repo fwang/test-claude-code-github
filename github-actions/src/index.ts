@@ -48,9 +48,9 @@ async function run() {
 
     if (await branchIsDirty()) {
       const summary =
-        (await runOpencode("Describe the changes in less than 40 characters.", {
-          continue: true,
-        })) || `Fix issue: ${payload.issue.title}`;
+        (await runOpencode(
+          `Summary the following in less than 40 characters:\n\n${response}`
+        )) || `Fix issue: ${payload.issue.title}`;
       if (isPR) {
         await pushToCurrentBranch(summary);
         await updateComment(response);
@@ -158,16 +158,12 @@ async function createPR(branch: string, title: string, body: string) {
   return pr.data.number;
 }
 
-async function runOpencode(prompt: string, opts?: { continue?: boolean }) {
+async function runOpencode(prompt: string) {
   console.log("Running opencode...");
   const promptPath = path.join(os.tmpdir(), "PROMPT");
   await Bun.write(promptPath, prompt);
-  // TODO
-  const ret = await $`cat ${promptPath} | opencode run -m ${
-    process.env.INPUT_MODEL
-  } ${opts?.continue ? "--continue" : ""} ${
-    opts?.continue ? "--print-logs" : ""
-  }`;
+  const ret =
+    await $`cat ${promptPath} | opencode run -m ${process.env.INPUT_MODEL} --print-logs`;
   return ret.stdout.toString().trim();
 }
 

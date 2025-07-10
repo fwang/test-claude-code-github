@@ -15,22 +15,14 @@ if (github.context.eventName !== "issue_comment") {
   process.exit(1);
 }
 
-const octoRest = new Octokit({
-  auth: process.env.GITHUB_TOKEN,
-});
-const octoGraph = graphql.defaults({
-  headers: {
-    authorization: `token ${process.env.GITHUB_TOKEN}`,
-  },
-});
 const { owner, repo } = github.context.repo;
 const payload = github.context.payload as IssueCommentEvent;
 const issueId = payload.issue.number;
 const body = payload.comment.body;
 const isPR = payload.issue.pull_request;
 
-let octRest: Octokit;
-let octGraph: typeof graphql;
+let octoRest: Octokit;
+let octoGraph: typeof graphql;
 let commentId: number;
 
 async function run() {
@@ -40,12 +32,11 @@ async function run() {
     const userPrompt = match[1];
 
     const oidcToken = await generateGitHubToken();
-    // TODO
-    console.log("!#!@#!@#!@#", { oidcToken });
     const appToken = await exchangeForAppToken(oidcToken);
-    // TODO
-    console.log("!#!@#!@#!@#", { appToken });
-    throw new Error("manual");
+    octoRest = new Octokit({ auth: appToken });
+    octoGraph = graphql.defaults({
+      headers: { authorization: `token ${appToken}` },
+    });
 
     const comment = await createComment("opencode started...");
     commentId = comment.data.id;

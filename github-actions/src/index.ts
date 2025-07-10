@@ -100,7 +100,7 @@ async function generateGitHubToken() {
 
 async function exchangeForAppToken(oidcToken: string) {
   const response = await fetch(
-    "https://api.opencode.ai/exchange_github_app_token",
+    "https://api.frank.dev.opencode.ai/exchange_github_app_token",
     {
       method: "POST",
       headers: {

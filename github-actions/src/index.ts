@@ -39,7 +39,13 @@ async function run() {
     if (!match?.[1]) throw new Error("Command must start with `hey opencode`");
     const userPrompt = match[1];
 
-    const token = await generateGitHubToken();
+    const oidcToken = await generateGitHubToken();
+    // TODO
+    console.log("!#!@#!@#!@#", { oidcToken });
+    const appToken = await exchangeForAppToken(oidcToken);
+    // TODO
+    console.log("!#!@#!@#!@#", { appToken });
+    throw new Error("manual");
 
     const comment = await createComment("opencode started...");
     commentId = comment.data.id;
@@ -91,14 +97,36 @@ if (import.meta.main) {
 }
 
 async function generateGitHubToken() {
-  const oidcToken = await core.getIDToken("claude-code-github-action");
-  console.log("OIDC Token:", oidcToken);
-  throw new Error("manual");
-  return oidcToken;
-  //const token = await octoRest.rest.apps.createInstallationToken({
-  //  installation_id: process.env.GITHUB_APP_INSTALLATION_ID!,
-  //});
-  //return token.data.token;
+  try {
+    return await core.getIDToken("opencode-github-action");
+  } catch (error) {
+    console.error("Failed to get OIDC token:", error);
+    throw new Error(
+      "Could not fetch an OIDC token. Make sure to add `id-token: write` to your workflow permissions."
+    );
+  }
+}
+
+async function exchangeForAppToken(oidcToken: string) {
+  const response = await fetch(
+    "https://api.opencode.ai/exchange_github_app_token",
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${oidcToken}`,
+      },
+    }
+  );
+
+  if (!response.ok) {
+    const responseJson = (await response.json()) as { error?: string };
+    throw new Error(
+      `App token exchange failed: ${response.status} ${response.statusText} - ${responseJson.error}`
+    );
+  }
+
+  const responseJson = (await response.json()) as { token: string };
+  return responseJson.token;
 }
 
 function buildComment(content: string, opts?: { share?: string }) {

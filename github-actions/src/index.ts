@@ -17,6 +17,7 @@ if (github.context.eventName !== "issue_comment") {
 
 const { owner, repo } = github.context.repo;
 const payload = github.context.payload as IssueCommentEvent;
+const actor = github.context.actor;
 const issueId = payload.issue.number;
 const body = payload.comment.body;
 const isPR = payload.issue.pull_request;
@@ -37,6 +38,7 @@ async function run() {
     octoGraph = graphql.defaults({
       headers: { authorization: `token ${appToken}` },
     });
+    await assertPermissions();
 
     const comment = await createComment("opencode started...");
     commentId = comment.data.id;
@@ -118,6 +120,26 @@ async function exchangeForAppToken(oidcToken: string) {
 
   const responseJson = (await response.json()) as { token: string };
   return responseJson.token;
+}
+
+async function assertPermissions() {
+  console.log(`Asserting permissions for user ${actor}...`);
+  try {
+    const response = await octoRest.repos.getCollaboratorPermissionLevel({
+      owner,
+      repo,
+      username: actor,
+    });
+
+    const permission = response.data.permission;
+    console.log(`  permission: ${permission}`);
+
+    if (!["admin", "write"].includes(permission))
+      throw new Error(`User ${actor} does not have write permissions`);
+  } catch (error) {
+    console.error(`Failed to check permissions: ${error}`);
+    throw new Error(`Failed to check permissions for user ${actor}: ${error}`);
+  }
 }
 
 function buildComment(content: string, opts?: { share?: string }) {

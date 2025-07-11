@@ -1,7 +1,7 @@
 import Stripe from "stripe";
 import { Resource } from "sst";
-import { Util } from "@notes/core/util";
-import { Billing } from "@notes/core/billing";
+import { Util } from "@air-notes/core/util";
+import { Billing } from "@air-notes/core/billing";
 
 export const main = Util.handler(async (event) => {
   const { storage, source } = JSON.parse(event.body || "{}");

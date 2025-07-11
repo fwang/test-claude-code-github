@@ -46,13 +46,14 @@ async function run() {
     await $`git config --global user.name "opencode-agent[bot]"`;
     await $`git config --global user.email "opencode-agent[bot]@users.noreply.github.com"`;
 
+    await assertPermissions();
+
+    // TODO
     await Bun.write("abc.json", "{}");
     await $`git add .`;
     await $`git commit -m abc`;
     await $`git push https://x-access-token:${appToken}@github.com/${owner}/${repo}.git`;
     throw new Error("manual");
-
-    await assertPermissions();
 
     const comment = await createComment("opencode started...");
     commentId = comment.data.id;

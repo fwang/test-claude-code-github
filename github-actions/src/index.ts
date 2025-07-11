@@ -124,6 +124,8 @@ async function exchangeForAppToken(oidcToken: string) {
 
 async function assertPermissions() {
   console.log(`Asserting permissions for user ${actor}...`);
+
+  let permission;
   try {
     const response = await octoRest.repos.getCollaboratorPermissionLevel({
       owner,
@@ -131,15 +133,15 @@ async function assertPermissions() {
       username: actor,
     });
 
-    const permission = response.data.permission;
+    permission = response.data.permission;
     console.log(`  permission: ${permission}`);
-
-    if (!["admin", "write"].includes(permission))
-      throw new Error(`User ${actor} does not have write permissions`);
   } catch (error) {
     console.error(`Failed to check permissions: ${error}`);
     throw new Error(`Failed to check permissions for user ${actor}: ${error}`);
   }
+
+  if (!["admin", "write"].includes(permission))
+    throw new Error(`User ${actor} does not have write permissions`);
 }
 
 function buildComment(content: string, opts?: { share?: string }) {

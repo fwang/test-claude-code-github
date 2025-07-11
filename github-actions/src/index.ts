@@ -198,11 +198,11 @@ async function checkoutPR(pr: GitHubPullRequest) {
 
 async function pushToCurrentBranch(summary: string) {
   console.log("Pushing to current branch...");
-  await $`git config --global user.email "runner@opencode.ai"`;
-  await $`git config --global user.name "opencode"`;
+  await $`git config --global user.name "opencode[bot]"`;
+  await $`git config --global user.email "opencode[bot]@users.noreply.github.com"`;
   await $`git add .`;
   await $`git commit -m "${summary}"`;
-  await $`git push`;
+  await $`git push https://x-access-token:${appToken}@github.com/${owner}/${repo}.git`;
 }
 
 async function pushToNewBranch(summary: string) {
@@ -215,11 +215,11 @@ async function pushToNewBranch(summary: string) {
     .join("_");
   const branch = `opencode/${isPR ? "pr" : "issue"}${issueId}-${timestamp}`;
   await $`git checkout -b ${branch}`;
-  await $`git config --global user.email "runner@opencode.ai"`;
-  await $`git config --global user.name "opencode"`;
+  await $`git config --global user.name "opencode[bot]"`;
+  await $`git config --global user.email "opencode[bot]@users.noreply.github.com"`;
   await $`git add .`;
   await $`git commit -m "${summary}"`;
-  await $`git push -u origin ${branch}`;
+  await $`git push https://x-access-token:${appToken}@github.com/${owner}/${repo}.git -u origin ${branch}`;
   return branch;
 }
 

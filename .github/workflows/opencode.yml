@@ -9,7 +9,7 @@ jobs:
     if: startsWith(github.event.comment.body, 'hey opencode')
     runs-on: ubuntu-latest
     permissions:
-      id-token: write
+      id-token: read
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4

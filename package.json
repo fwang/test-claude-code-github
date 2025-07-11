@@ -1,5 +1,5 @@
 {
-  "name": "notes",
+  "name": "jayair-forked-notes",
   "version": "0.0.0",
   "workspaces": [
     "packages/*"

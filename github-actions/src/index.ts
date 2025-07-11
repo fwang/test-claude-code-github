@@ -8,7 +8,12 @@ import { graphql } from "@octokit/graphql";
 import * as core from "@actions/core";
 import * as github from "@actions/github";
 import type { IssueCommentEvent } from "@octokit/webhooks-types";
-import type { IssueQueryResponse, PullRequestQueryResponse } from "./types";
+import type {
+  GitHubIssue,
+  GitHubPullRequest,
+  IssueQueryResponse,
+  PullRequestQueryResponse,
+} from "./types";
 
 if (github.context.eventName !== "issue_comment") {
   core.setFailed(`Unsupported event type: ${github.context.eventName}`);
@@ -32,11 +37,6 @@ async function run() {
     if (!match?.[1]) throw new Error("Command must start with `hey opencode`");
     const userPrompt = match[1];
 
-    // TODO
-    console.log("REF1", process.env.REF1);
-    console.log("REF2", process.env.REF2);
-    throw new Error("manual");
-
     const oidcToken = await generateGitHubToken();
     const appToken = await exchangeForAppToken(oidcToken);
     octoRest = new Octokit({ auth: appToken });
@@ -48,11 +48,15 @@ async function run() {
     const comment = await createComment("opencode started...");
     commentId = comment.data.id;
 
-    const promptData = isPR
-      ? await fetchPromptDataForPR()
-      : await fetchPromptDataForIssue();
-
-    if (isPR) await checkoutPR();
+    let promptData;
+    if (isPR) {
+      const prData = await fetchPR();
+      promptData = buildPromptDataForPR(prData);
+      await checkoutPR(prData);
+    } else {
+      const issueData = await fetchIssue();
+      promptData = buildPromptDataForIssue(issueData);
+    }
 
     const response = await runOpencode(`${userPrompt}\n\n${promptData}`);
 
@@ -182,29 +186,14 @@ async function updateComment(body: string) {
   });
 }
 
-async function checkoutPR() {
+async function checkoutPR(pr: GitHubPullRequest) {
   console.log("Checking out PR...");
 
-  //  //const prData = githubData.contextData as GitHubPullRequest;
-  //  const prState = payload.issue.pull_request.state;
-  //  const branchName = prData.headRefName;
-  const branchName = github.context.ref;
-  //
-  //  // Determine optimal fetch depth based on PR commit count, with a minimum of 20
-  //  const commitCount = prData.commits.totalCount;
-  //  const fetchDepth = Math.max(commitCount, 20);
-  //
-  //  console.log(
-  //    `PR #${entityNumber}: ${commitCount} commits, using fetch depth ${fetchDepth}`,
-  //  );
-
-  // Execute git commands to checkout PR branch (dynamic depth based on PR size)
-  await $`git fetch origin --depth=1 ${branchName}`;
+  const branchName = pr.headRefName;
+  const commitCount = pr.commits.totalCount;
+  const depth = Math.max(commitCount, 20);
+  await $`git fetch origin --depth=${depth} ${branchName}`;
   await $`git checkout ${branchName}`;
-
-  await $`git add .`;
-  await $`git commit -m "${summary}"`;
-  await $`git push`;
 }
 
 async function pushToCurrentBranch(summary: string) {
@@ -263,7 +252,7 @@ async function branchIsDirty() {
   return ret.stdout.toString().trim().length > 0;
 }
 
-async function fetchPromptDataForIssue() {
+async function fetchIssue() {
   console.log("Fetching prompt data for issue...");
   const issueResult = await octoGraph<IssueQueryResponse>(
     `
@@ -301,6 +290,10 @@ query($owner: String!, $repo: String!, $number: Int!) {
   const issue = issueResult.repository.issue;
   if (!issue) throw new Error(`Issue #${issueId} not found`);
 
+  return issue;
+}
+
+function buildPromptDataForIssue(issue: GitHubIssue) {
   const comments = (issue.comments?.nodes || [])
     .filter((c) => {
       const id = parseInt(c.databaseId);
@@ -319,7 +312,7 @@ query($owner: String!, $repo: String!, $number: Int!) {
   ].join("\n");
 }
 
-async function fetchPromptDataForPR() {
+async function fetchPR() {
   console.log("Fetching prompt data for PR...");
   const prResult = await octoGraph<PullRequestQueryResponse>(
     `
@@ -408,6 +401,10 @@ query($owner: String!, $repo: String!, $number: Int!) {
   const pr = prResult.repository.pullRequest;
   if (!pr) throw new Error(`PR #${issueId} not found`);
 
+  return pr;
+}
+
+function buildPromptDataForPR(pr: GitHubPullRequest) {
   const comments = (pr.comments?.nodes || [])
     .filter((c) => {
       const id = parseInt(c.databaseId);

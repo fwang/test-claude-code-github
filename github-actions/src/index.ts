@@ -43,8 +43,8 @@ async function run() {
     octoGraph = graphql.defaults({
       headers: { authorization: `token ${appToken}` },
     });
-    await $`git config --global user.name "opencode[bot]"`;
-    await $`git config --global user.email "opencode[bot]@users.noreply.github.com"`;
+    await $`git config --global user.name "opencode-agent[bot]"`;
+    await $`git config --global user.email "opencode-agent[bot]@users.noreply.github.com"`;
 
     await Bun.write("abc.json", "{}");
     await $`git add .`;

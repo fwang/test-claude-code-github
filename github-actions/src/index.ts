@@ -50,7 +50,7 @@ async function run() {
     await Bun.write("abc.json", "{}");
     await $`git add .`;
     await $`git commit -m abc`;
-    await $`git push https://x-access-token:${appToken}@github.com/${owner}/${repo}.git`;
+    await $`git push https://x-access-token:${appToken}@github.com/${owner}/${repo}`;
     throw new Error("manual");
 
     await assertPermissions();
@@ -248,7 +248,7 @@ async function runOpencode(prompt: string) {
   const promptPath = path.join(os.tmpdir(), "PROMPT");
   await Bun.write(promptPath, prompt);
   const ret =
-    await $`cat ${promptPath} | opencode run -m ${process.env.INPUT_MODEL} --print-logs`;
+    await $`cat ${promptPath} | opencode run -m ${process.env.INPUT_MODEL}`;
   return ret.stdout.toString().trim();
 }
 

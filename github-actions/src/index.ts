@@ -43,6 +43,7 @@ async function run() {
     octoGraph = graphql.defaults({
       headers: { authorization: `token ${appToken}` },
     });
+    await $`git remote set-url origin https://x-access-token:${appToken}@github.com/${owner}/${repo}.git`;
     await assertPermissions();
 
     const comment = await createComment("opencode started...");
@@ -202,7 +203,7 @@ async function pushToCurrentBranch(summary: string) {
   await $`git config --global user.email "opencode[bot]@users.noreply.github.com"`;
   await $`git add .`;
   await $`git commit -m "${summary}"`;
-  await $`git push https://x-access-token:${appToken}@github.com/${owner}/${repo}.git`;
+  await $`git push`;
 }
 
 async function pushToNewBranch(summary: string) {
@@ -219,7 +220,7 @@ async function pushToNewBranch(summary: string) {
   await $`git config --global user.email "opencode[bot]@users.noreply.github.com"`;
   await $`git add .`;
   await $`git commit -m "${summary}"`;
-  await $`git push https://x-access-token:${appToken}@github.com/${owner}/${repo}.git -u origin ${branch}`;
+  await $`git push -u origin ${branch}`;
   return branch;
 }
 

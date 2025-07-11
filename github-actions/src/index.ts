@@ -43,6 +43,8 @@ async function run() {
     octoGraph = graphql.defaults({
       headers: { authorization: `token ${appToken}` },
     });
+    await $`git config --global user.name "opencode[bot]"`;
+    await $`git config --global user.email "opencode[bot]@users.noreply.github.com"`;
     await $`git remote set-url origin https://x-access-token:${appToken}@github.com/${owner}/${repo}.git`;
     await assertPermissions();
 
@@ -67,7 +69,7 @@ async function run() {
           `Summary the following in less than 40 characters:\n\n${response}`
         )) || `Fix issue: ${payload.issue.title}`;
       if (isPR) {
-        await pushToCurrentBranch(summary);
+        await pushToCurrentBranch(summary, appToken);
         await updateComment(response);
       } else {
         const branch = await pushToNewBranch(summary);
@@ -168,7 +170,7 @@ function buildComment(content: string, opts?: { share?: string }) {
 }
 
 async function createComment(body: string) {
-  console.log("Creatinig comment...");
+  console.log("Creating comment...");
   return await octoRest.rest.issues.createComment({
     owner,
     repo,
@@ -197,13 +199,11 @@ async function checkoutPR(pr: GitHubPullRequest) {
   await $`git checkout ${branchName}`;
 }
 
-async function pushToCurrentBranch(summary: string) {
+async function pushToCurrentBranch(summary: string, appToken: string) {
   console.log("Pushing to current branch...");
-  await $`git config --global user.name "opencode[bot]"`;
-  await $`git config --global user.email "opencode[bot]@users.noreply.github.com"`;
   await $`git add .`;
   await $`git commit -m "${summary}"`;
-  await $`git push`;
+  await $`git push https://x-access-token:${appToken}@github.com/${owner}/${repo}.git`;
 }
 
 async function pushToNewBranch(summary: string) {
@@ -216,8 +216,6 @@ async function pushToNewBranch(summary: string) {
     .join("_");
   const branch = `opencode/${isPR ? "pr" : "issue"}${issueId}-${timestamp}`;
   await $`git checkout -b ${branch}`;
-  await $`git config --global user.name "opencode[bot]"`;
-  await $`git config --global user.email "opencode[bot]@users.noreply.github.com"`;
   await $`git add .`;
   await $`git commit -m "${summary}"`;
   await $`git push -u origin ${branch}`;

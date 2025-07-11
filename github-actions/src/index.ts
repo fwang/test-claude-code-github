@@ -151,8 +151,13 @@ async function configureGit(appToken: string) {
   const ret = await $`git config --local --get ${config}`;
   gitCredentials = ret.stdout.toString().trim();
 
+  const newCredentials = Buffer.from(
+    `x-access-token:${appToken}`,
+    "utf8"
+  ).toString("base64");
+
   await $`git config --local --unset-all ${config}`;
-  await $`git config --local ${config} "AUTHORIZATION: basic ${appToken}"`;
+  await $`git config --local ${config} "AUTHORIZATION: basic ${newCredentials}"`;
   await $`git config --global user.name "opencode-agent[bot]"`;
   await $`git config --global user.email "opencode-agent[bot]@users.noreply.github.com"`;
 }

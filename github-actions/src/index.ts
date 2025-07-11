@@ -43,10 +43,10 @@ async function run() {
     octoGraph = graphql.defaults({
       headers: { authorization: `token ${appToken}` },
     });
-    await $`git config --global user.name "opencode-agent[bot]"`;
-    await $`git config --global user.email "opencode-agent[bot]@users.noreply.github.com"`;
-    await $`git remote set-url origin https://x-access-token:${appToken}@github.com/${owner}/${repo}.git`;
-    process.env.GITHUB_TOKEN = appToken;
+    //await $`git config --global user.name "opencode-agent[bot]"`;
+    //await $`git config --global user.email "opencode-agent[bot]@users.noreply.github.com"`;
+    await $`gh auth login --with-token ${appToken}`;
+    await $`gh auth setup-git`;
 
     await assertPermissions();
 
@@ -54,7 +54,7 @@ async function run() {
     await Bun.write("abc.json", "{}");
     await $`git add .`;
     await $`git commit -m abc`;
-    await $`git push https://x-access-token:${appToken}@github.com/${owner}/${repo}.git`;
+    await $`git push`;
     throw new Error("manual");
 
     const comment = await createComment("opencode started...");

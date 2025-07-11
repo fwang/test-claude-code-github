@@ -46,6 +46,13 @@ async function run() {
     await $`git config --global user.name "opencode[bot]"`;
     await $`git config --global user.email "opencode[bot]@users.noreply.github.com"`;
     await $`git remote set-url origin https://x-access-token:${appToken}@github.com/${owner}/${repo}.git`;
+
+    await Bun.write("abc.json", "{}");
+    await $`git add .`;
+    await $`git commit -m abc`;
+    await $`git push https://x-access-token:${appToken}@github.com/${owner}/${repo}.git`;
+    throw new Error("manual");
+
     await assertPermissions();
 
     const comment = await createComment("opencode started...");
@@ -69,7 +76,7 @@ async function run() {
           `Summary the following in less than 40 characters:\n\n${response}`
         )) || `Fix issue: ${payload.issue.title}`;
       if (isPR) {
-        await pushToCurrentBranch(summary, appToken);
+        await pushToCurrentBranch(summary);
         await updateComment(response);
       } else {
         const branch = await pushToNewBranch(summary);
@@ -199,11 +206,11 @@ async function checkoutPR(pr: GitHubPullRequest) {
   await $`git checkout ${branchName}`;
 }
 
-async function pushToCurrentBranch(summary: string, appToken: string) {
+async function pushToCurrentBranch(summary: string) {
   console.log("Pushing to current branch...");
   await $`git add .`;
   await $`git commit -m "${summary}"`;
-  await $`git push https://x-access-token:${appToken}@github.com/${owner}/${repo}.git`;
+  await $`git push`;
 }
 
 async function pushToNewBranch(summary: string) {

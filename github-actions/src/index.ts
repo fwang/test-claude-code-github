@@ -45,6 +45,8 @@ async function run() {
     });
     console.log("!@# before");
     await $`cat .git/config`;
+    await $`git config --local --list`;
+    await $`git config --local --unset-all http.https://github.com/.extraheader`;
     await $`git config --global user.name "opencode-agent[bot]"`;
     await $`git config --global user.email "opencode-agent[bot]@users.noreply.github.com"`;
     await $`git remote set-url origin https://x-access-token:${appToken}@github.com/${owner}/${repo}.git`;
@@ -54,7 +56,6 @@ async function run() {
     console.log("!@# after");
     await $`cat .git/config`;
     await $`git remote -v`;
-    await $`git config --get remote.origin.url`;
     await assertPermissions();
 
     // TODO

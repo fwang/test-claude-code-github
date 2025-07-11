@@ -45,12 +45,11 @@ async function run() {
     });
     await $`git config --global user.name "opencode[bot]"`;
     await $`git config --global user.email "opencode[bot]@users.noreply.github.com"`;
-    await $`git remote set-url origin https://x-access-token:${appToken}@github.com/${owner}/${repo}.git`;
 
     await Bun.write("abc.json", "{}");
     await $`git add .`;
     await $`git commit -m abc`;
-    await $`git push https://x-access-token:${appToken}@github.com/${owner}/${repo}`;
+    await $`git push https://x-access-token:${appToken}@github.com/${owner}/${repo}.git`;
     throw new Error("manual");
 
     await assertPermissions();

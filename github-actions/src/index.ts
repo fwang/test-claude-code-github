@@ -30,6 +30,7 @@ const isPR = payload.issue.pull_request;
 let octoRest: Octokit;
 let octoGraph: typeof graphql;
 let commentId: number;
+let gitCredentials: string;
 
 async function run() {
   try {
@@ -43,27 +44,23 @@ async function run() {
     octoGraph = graphql.defaults({
       headers: { authorization: `token ${appToken}` },
     });
-    console.log("!@# before");
-    await $`cat .git/config`;
-    await $`git config --local --list`;
-    await $`git config --local --unset-all http.https://github.com/.extraheader`;
-    await $`git config --global user.name "opencode-agent[bot]"`;
-    await $`git config --global user.email "opencode-agent[bot]@users.noreply.github.com"`;
-    await $`git remote set-url origin https://x-access-token:${appToken}@github.com/${owner}/${repo}.git`;
+    await overrideGitCredentials(appToken);
 
-    // set remote url
-
-    console.log("!@# after");
-    await $`cat .git/config`;
-    await $`git remote -v`;
-    await assertPermissions();
-
-    // TODO
+    //    console.log("!@# before");
+    //    await $`cat .git/config`;
+    //    await $`git config --local --list`;
+    //    await $`git config --local --unset-all http.https://github.com/.extraheader`;
+    //    await $`git config --global user.name "opencode-agent[bot]"`;
+    //    await $`git config --global user.email "opencode-agent[bot]@users.noreply.github.com"`;
+    //    await $`git remote set-url origin https://x-access-token:${appToken}@github.com/${owner}/${repo}.git`;
+    //
     await Bun.write("abc.json", "{}");
     await $`git add .`;
     await $`git commit -m abc`;
     await $`git push`;
     throw new Error("manual");
+
+    await assertPermissions();
 
     const comment = await createComment("opencode started...");
     commentId = comment.data.id;
@@ -112,6 +109,8 @@ async function run() {
     core.setFailed(`opencode failed with error: ${msg}`);
     // Also output the clean error message for the action to capture
     //core.setOutput("prepare_error", e.message);
+  } finally {
+    await restoreGitCredentials();
     process.exit(1);
   }
 }
@@ -151,6 +150,20 @@ async function exchangeForAppToken(oidcToken: string) {
 
   const responseJson = (await response.json()) as { token: string };
   return responseJson.token;
+}
+
+async function overrideGitCredentials(appToken: string) {
+  const config = "http.https://github.com/.extraheader";
+  const ret = await $`git config --local --get ${config}`;
+  gitCredentials = ret.stdout.toString().trim();
+
+  await $`git config --local --unset-all ${config}`;
+  await $`git config --local ${config} "AUTHORIZATION: basic ${appToken}"`;
+}
+
+async function restoreGitCredentials() {
+  const config = "http.https://github.com/.extraheader";
+  await $`git config --local ${config} "${gitCredentials}"`;
 }
 
 async function assertPermissions() {

@@ -1,6 +1,6 @@
 import * as uuid from "uuid";
 import { Resource } from "sst";
-import { Util } from "@air-notes/core/util";
+import { Util } from "@notes/core/util";
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { PutCommand, DynamoDBDocumentClient } from "@aws-sdk/lib-dynamodb";
 

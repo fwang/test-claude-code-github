@@ -46,6 +46,9 @@ async function run() {
     await $`git config --global user.name "opencode-agent[bot]"`;
     await $`git config --global user.email "opencode-agent[bot]@users.noreply.github.com"`;
     await $`git remote set-url origin https://x-access-token:${appToken}@github.com/${owner}/${repo}.git`;
+
+    // set remote url
+
     await $`git remote -v`;
     await $`git config --get remote.origin.url`;
     await assertPermissions();

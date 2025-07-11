@@ -32,6 +32,11 @@ async function run() {
     if (!match?.[1]) throw new Error("Command must start with `hey opencode`");
     const userPrompt = match[1];
 
+    // TODO
+    console.log("REF1", process.env.REF1);
+    console.log("REF2", process.env.REF2);
+    throw new Error("manual");
+
     const oidcToken = await generateGitHubToken();
     const appToken = await exchangeForAppToken(oidcToken);
     octoRest = new Octokit({ auth: appToken });
@@ -46,6 +51,8 @@ async function run() {
     const promptData = isPR
       ? await fetchPromptDataForPR()
       : await fetchPromptDataForIssue();
+
+    if (isPR) await checkoutPR();
 
     const response = await runOpencode(`${userPrompt}\n\n${promptData}`);
 
@@ -173,6 +180,31 @@ async function updateComment(body: string) {
     comment_id: commentId,
     body: buildComment(body),
   });
+}
+
+async function checkoutPR() {
+  console.log("Checking out PR...");
+
+  //  //const prData = githubData.contextData as GitHubPullRequest;
+  //  const prState = payload.issue.pull_request.state;
+  //  const branchName = prData.headRefName;
+  const branchName = github.context.ref;
+  //
+  //  // Determine optimal fetch depth based on PR commit count, with a minimum of 20
+  //  const commitCount = prData.commits.totalCount;
+  //  const fetchDepth = Math.max(commitCount, 20);
+  //
+  //  console.log(
+  //    `PR #${entityNumber}: ${commitCount} commits, using fetch depth ${fetchDepth}`,
+  //  );
+
+  // Execute git commands to checkout PR branch (dynamic depth based on PR size)
+  await $`git fetch origin --depth=1 ${branchName}`;
+  await $`git checkout ${branchName}`;
+
+  await $`git add .`;
+  await $`git commit -m "${summary}"`;
+  await $`git push`;
 }
 
 async function pushToCurrentBranch(summary: string) {

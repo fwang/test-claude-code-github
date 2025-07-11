@@ -9,9 +9,6 @@ jobs:
     if: startsWith(github.event.comment.body, 'hey opencode')
     runs-on: ubuntu-latest
     permissions:
-      contents: write
-      pull-requests: write
-      issues: write
       id-token: write
     steps:
       - name: Checkout repository

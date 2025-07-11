@@ -50,7 +50,7 @@ runs:
       run: |
         bun run ${GITHUB_ACTION_PATH}/src/index.ts
       env:
-        REF1: ${{ github.event.issue.pull_request.head.ref }}
+        REF1: ${{ github.head_ref }}
         REF2: ${{ github.ref }}
         INPUT_MODEL: ${{ inputs.model }}
 

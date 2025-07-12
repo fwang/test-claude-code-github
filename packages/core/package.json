@@ -1,5 +1,5 @@
 {
-  "name": "@airy-notes/core",
+  "name": "@good-notes/core",
   "version": "0.0.0",
   "scripts": {
     "test": "sst shell vitest"

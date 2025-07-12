@@ -1,8 +1,8 @@
 {
-  "name": "@airy-notes/scripts",
+  "name": "@good-notes/scripts",
   "version": "0.0.0",
   "dependencies": {
-    "@airy-notes/core": "*",
+    "@good-notes/core": "*",
     "sst": "*"
   },
   "scripts": {

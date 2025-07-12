@@ -261,11 +261,10 @@ function buildComment(content: string) {
   const runUrl = `/${owner}/${repo}/actions/runs/${runId}`;
   return [
     content,
-    "",
-    `${process.env.INPUT_MODEL} | `,
+    "\n\n",
     shareUrl ? `[view session](${shareUrl}) | ` : "",
     `[view log](${runUrl})`,
-  ].join("\n");
+  ].join("");
 }
 
 async function createComment(body: string) {

@@ -182,10 +182,8 @@ async function configureGit(appToken: string) {
 
   await $`git config --local --unset-all ${config}`;
   await $`git config --local ${config} "AUTHORIZATION: basic ${newCredentials}"`;
-  await $`git config --global user.name "${actor}"`;
-  await $`git config --global user.email "${actor}@users.noreply.github.com"`;
-  //await $`git config --global user.name "opencode-agent[bot]"`;
-  //await $`git config --global user.email "opencode-agent[bot]@users.noreply.github.com"`;
+  await $`git config --global user.name "opencode-agent[bot]"`;
+  await $`git config --global user.email "opencode-agent[bot]@users.noreply.github.com"`;
 }
 
 async function checkoutLocalBranch(pr: GitHubPullRequest) {
@@ -283,10 +281,9 @@ function generateBranchName() {
 async function pushToCurrentBranch(summary: string) {
   console.log("Pushing to current branch...");
   await $`git add .`;
-  await $`git commit -m "${summary}`;
-  //  await $`git commit -m "${summary}
-  //
-  //Co-authored-by: ${actor} <${actor}@users.noreply.github.com>"`;
+  await $`git commit -m "${summary}
+  
+Co-authored-by: ${actor} <${actor}@users.noreply.github.com>"`;
   await $`git push`;
 }
 
@@ -296,10 +293,9 @@ async function pushToForkBranch(summary: string, pr: GitHubPullRequest) {
   const remoteBranch = pr.headRefName;
 
   await $`git add .`;
-  await $`git commit -m "${summary}`;
-  //  await $`git commit -m "${summary}
-  //
-  //Co-authored-by: ${actor} <${actor}@users.noreply.github.com>"`;
+  await $`git commit -m "${summary}
+  
+Co-authored-by: ${actor} <${actor}@users.noreply.github.com>"`;
   await $`git push fork HEAD:${remoteBranch}`;
 }
 
@@ -308,10 +304,9 @@ async function pushToNewBranch(summary: string) {
   const branch = generateBranchName();
   await $`git checkout -b ${branch}`;
   await $`git add .`;
-  await $`git commit -m "${summary}`;
-  //  await $`git commit -m "${summary}
-  //
-  //Co-authored-by: ${actor} <${actor}@users.noreply.github.com>"`;
+  await $`git commit -m "${summary}
+  
+Co-authored-by: ${actor} <${actor}@users.noreply.github.com>"`;
   await $`git push -u origin ${branch}`;
   return branch;
 }

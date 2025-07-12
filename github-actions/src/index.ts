@@ -96,7 +96,7 @@ async function run() {
     if (await branchIsDirty()) {
       const summary =
         (await runOpencode(
-          `Summary the following in less than 40 characters:\n\n${response}`
+          `Summarize the following in less than 40 characters:\n\n${response}`
         )) || `Fix issue: ${payload.issue.title}`;
 
       if (state.type === "issue") {
@@ -111,7 +111,7 @@ async function run() {
         await pushToCurrentBranch(summary);
         await updateComment(response);
       } else if (state.type === "fork-pr") {
-        await pushToCurrentBranch(summary);
+        await pushToForkBranch(summary, state.pr);
         await updateComment(response);
       }
     } else {
@@ -286,6 +286,16 @@ async function pushToCurrentBranch(summary: string) {
   await $`git add .`;
   await $`git commit -m "${summary}"`;
   await $`git push`;
+}
+
+async function pushToForkBranch(summary: string, pr: GitHubPullRequest) {
+  console.log("Pushing to fork branch...");
+
+  const remoteBranch = pr.headRefName;
+
+  await $`git add .`;
+  await $`git commit -m "${summary}"`;
+  await $`git push fork ${remoteBranch}`;
 }
 
 async function pushToNewBranch(summary: string) {

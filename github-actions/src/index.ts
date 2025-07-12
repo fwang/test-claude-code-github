@@ -74,12 +74,14 @@ async function run() {
         pr: prData,
       };
     } else {
-      const issueData = await fetchIssue();
       state = {
         type: "issue",
-        issue: issueData,
+        issue: await fetchIssue(),
       };
     }
+
+    // TODO
+    console.log("1@#!@#@!#", state.type);
 
     // Setup git branch
     if (state.type === "local-pr") await checkoutLocalBranch(state.pr);

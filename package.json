@@ -1,5 +1,5 @@
 {
-  "name": "jj-notes",
+  "name": "airy-notes",
   "version": "0.0.0",
   "workspaces": [
     "packages/*"

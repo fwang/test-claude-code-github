@@ -295,7 +295,7 @@ async function pushToForkBranch(summary: string, pr: GitHubPullRequest) {
 
   await $`git add .`;
   await $`git commit -m "${summary}"`;
-  await $`git push fork ${remoteBranch}`;
+  await $`git push fork HEAD:${remoteBranch}`;
 }
 
 async function pushToNewBranch(summary: string) {

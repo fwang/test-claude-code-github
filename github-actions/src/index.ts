@@ -25,12 +25,24 @@ const payload = github.context.payload as IssueCommentEvent;
 const actor = github.context.actor;
 const issueId = payload.issue.number;
 const body = payload.comment.body;
-const isPR = payload.issue.pull_request;
 
 let octoRest: Octokit;
 let octoGraph: typeof graphql;
 let commentId: number;
 let gitCredentials: string;
+let state:
+  | {
+      type: "issue";
+      issue: GitHubIssue;
+    }
+  | {
+      type: "local-pr";
+      pr: GitHubPullRequest;
+    }
+  | {
+      type: "fork-pr";
+      pr: GitHubPullRequest;
+    };
 
 async function run() {
   try {
@@ -50,16 +62,33 @@ async function run() {
     const comment = await createComment("opencode started...");
     commentId = comment.data.id;
 
-    let promptData;
-    if (isPR) {
+    // Set state
+    if (payload.issue.pull_request) {
       const prData = await fetchPR();
-      promptData = buildPromptDataForPR(prData);
-      await checkoutPR(prData);
+      state = {
+        type:
+          prData.headRepository.nameWithOwner ===
+          prData.baseRepository.nameWithOwner
+            ? "local-pr"
+            : "fork-pr",
+        pr: prData,
+      };
     } else {
       const issueData = await fetchIssue();
-      promptData = buildPromptDataForIssue(issueData);
+      state = {
+        type: "issue",
+        issue: issueData,
+      };
     }
 
+    // Setup git branch
+    if (state.type === "local-pr") await checkoutLocalBranch(state.pr);
+    else if (state.type === "fork-pr") await checkoutForkBranch(state.pr);
+
+    const promptData =
+      state.type === "issue"
+        ? buildPromptDataForIssue(state.issue)
+        : buildPromptDataForPR(state.pr);
     const response = await runOpencode(`${userPrompt}\n\n${promptData}`);
 
     if (await branchIsDirty()) {
@@ -67,10 +96,8 @@ async function run() {
         (await runOpencode(
           `Summary the following in less than 40 characters:\n\n${response}`
         )) || `Fix issue: ${payload.issue.title}`;
-      if (isPR) {
-        await pushToCurrentBranch(summary);
-        await updateComment(response);
-      } else {
+
+      if (state.type === "issue") {
         const branch = await pushToNewBranch(summary);
         const pr = await createPR(
           branch,
@@ -78,6 +105,12 @@ async function run() {
           `${response}\n\nCloses #${issueId}`
         );
         await updateComment(`opencode created pull request #${pr}`);
+      } else if (state.type === "local-pr") {
+        await pushToCurrentBranch(summary);
+        await updateComment(response);
+      } else if (state.type === "fork-pr") {
+        await pushToCurrentBranch(summary);
+        await updateComment(response);
       }
     } else {
       await updateComment(response);
@@ -138,6 +171,7 @@ async function exchangeForAppToken(oidcToken: string) {
 }
 
 async function configureGit(appToken: string) {
+  console.log("Configuring git...");
   const config = "http.https://github.com/.extraheader";
   const ret = await $`git config --local --get ${config}`;
   gitCredentials = ret.stdout.toString().trim();
@@ -153,7 +187,30 @@ async function configureGit(appToken: string) {
   await $`git config --global user.email "opencode-agent[bot]@users.noreply.github.com"`;
 }
 
+async function checkoutLocalBranch(pr: GitHubPullRequest) {
+  console.log("Checking out local branch...");
+
+  const branch = pr.headRefName;
+  const depth = Math.max(pr.commits.totalCount, 20);
+
+  await $`git fetch origin --depth=${depth} ${branch}`;
+  await $`git checkout ${branch}`;
+}
+
+async function checkoutForkBranch(pr: GitHubPullRequest) {
+  console.log("Checking out fork branch...");
+
+  const remoteBranch = pr.headRefName;
+  const localBranch = generateBranchName();
+  const depth = Math.max(pr.commits.totalCount, 20);
+
+  await $`git remote add fork https://github.com/${pr.headRepository.nameWithOwner}.git`;
+  await $`git fetch fork --depth=${depth} ${remoteBranch}`;
+  await $`git checkout -b ${localBranch} fork/${remoteBranch}`;
+}
+
 async function restoreGitConfig() {
+  if (!gitCredentials) return;
   const config = "http.https://github.com/.extraheader";
   await $`git config --local ${config} "${gitCredentials}"`;
 }
@@ -211,17 +268,15 @@ async function updateComment(body: string) {
   });
 }
 
-async function checkoutPR(pr: GitHubPullRequest) {
-  console.log("Checking out PR...");
-
-  const branchName = pr.headRefName;
-  const commitCount = pr.commits.totalCount;
-  const depth = Math.max(commitCount, 20);
-  await $`git fetch origin --depth=${depth} ${branchName}`;
-  await $`git checkout ${branchName}`;
-  // TODO
-  console.log(pr);
-  throw new Error("manual");
+function generateBranchName() {
+  const type = state.type === "issue" ? "issue" : "pr";
+  const timestamp = new Date()
+    .toISOString()
+    .replace(/[:-]/g, "")
+    .replace(/\.\d{3}Z/, "")
+    .split("T")
+    .join("_");
+  return `opencode/${type}${issueId}-${timestamp}`;
 }
 
 async function pushToCurrentBranch(summary: string) {
@@ -233,13 +288,7 @@ async function pushToCurrentBranch(summary: string) {
 
 async function pushToNewBranch(summary: string) {
   console.log("Pushing to new branch...");
-  const timestamp = new Date()
-    .toISOString()
-    .replace(/[:-]/g, "")
-    .replace(/\.\d{3}Z/, "")
-    .split("T")
-    .join("_");
-  const branch = `opencode/${isPR ? "pr" : "issue"}${issueId}-${timestamp}`;
+  const branch = generateBranchName();
   await $`git checkout -b ${branch}`;
   await $`git add .`;
   await $`git commit -m "${summary}"`;
@@ -355,6 +404,12 @@ query($owner: String!, $repo: String!, $number: Int!) {
       additions
       deletions
       state
+      baseRepository {
+        nameWithOwner
+      }
+      headRepository {
+        nameWithOwner
+      }
       commits(first: 100) {
         totalCount
         nodes {

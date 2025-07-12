@@ -56,6 +56,12 @@ export type GitHubPullRequest = {
   additions: number;
   deletions: number;
   state: string;
+  baseRepository: {
+    nameWithOwner: string;
+  };
+  headRepository: {
+    nameWithOwner: string;
+  };
   commits: {
     totalCount: number;
     nodes: Array<{

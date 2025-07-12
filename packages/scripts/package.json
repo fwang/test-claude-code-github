@@ -1,8 +1,8 @@
 {
-  "name": "@air-notes/scripts",
+  "name": "@jay-notes/scripts",
   "version": "0.0.0",
   "dependencies": {
-    "@air-notes/core": "*",
+    "@jay-notes/core": "*",
     "sst": "*"
   },
   "scripts": {

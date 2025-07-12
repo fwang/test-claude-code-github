@@ -1,5 +1,5 @@
 {
-  "name": "@air-notes/core",
+  "name": "@jay-notes/core",
   "version": "0.0.0",
   "scripts": {
     "test": "sst shell vitest"

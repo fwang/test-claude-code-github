@@ -26,6 +26,7 @@ const actor = github.context.actor;
 const issueId = payload.issue.number;
 const body = payload.comment.body;
 
+let appToken: string;
 let octoRest: Octokit;
 let octoGraph: typeof graphql;
 let commentId: number;
@@ -51,11 +52,14 @@ async function run() {
     const userPrompt = match[1];
 
     const oidcToken = await generateGitHubToken();
-    const appToken = await exchangeForAppToken(oidcToken);
+    appToken = await exchangeForAppToken(oidcToken);
     octoRest = new Octokit({ auth: appToken });
     octoGraph = graphql.defaults({
       headers: { authorization: `token ${appToken}` },
     });
+    // TODO
+    await revokeAppToken();
+
     await configureGit(appToken);
     await assertPermissions();
 
@@ -115,8 +119,10 @@ async function run() {
       await updateComment(response);
     }
     await restoreGitConfig();
+    await revokeAppToken();
   } catch (e: any) {
     await restoreGitConfig();
+    await revokeAppToken();
     console.error(e);
     let msg = e;
     if (e instanceof $.ShellError) {
@@ -537,4 +543,17 @@ function buildPromptDataForPR(pr: GitHubPullRequest) {
     ...(files.length > 0 ? ["- Changed files:", ...files] : []),
     ...(reviewData.length > 0 ? ["- Reviews:", ...reviewData] : []),
   ].join("\n");
+}
+
+async function revokeAppToken() {
+  if (!appToken) return;
+
+  await fetch("https://api.github.com/installation/token", {
+    method: "DELETE",
+    headers: {
+      Authorization: `Bearer ${appToken}`,
+      Accept: "application/vnd.github+json",
+      "X-GitHub-Api-Version": "2022-11-28",
+    },
+  });
 }

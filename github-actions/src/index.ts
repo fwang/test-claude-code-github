@@ -65,6 +65,7 @@ async function run() {
     commentId = comment.data.id;
 
     // Set state
+    const repoData = await fetchRepo();
     if (payload.issue.pull_request) {
       const prData = await fetchPR();
       state = {
@@ -90,17 +91,21 @@ async function run() {
       state.type === "issue"
         ? buildPromptDataForIssue(state.issue)
         : buildPromptDataForPR(state.pr);
-    const response = await runOpencode(`${userPrompt}\n\n${promptData}`);
+    const response = await runOpencode(`${userPrompt}\n\n${promptData}`, {
+      share: process.env.INPUT_SHARE === "true" || !repoData.data.private,
+    });
 
     if (await branchIsDirty()) {
       const summary =
         (await runOpencode(
-          `Summarize the following in less than 40 characters:\n\n${response}`
+          `Summarize the following in less than 40 characters:\n\n${response}`,
+          { share: false }
         )) || `Fix issue: ${payload.issue.title}`;
 
       if (state.type === "issue") {
         const branch = await pushToNewBranch(summary);
         const pr = await createPR(
+          repoData.data.default_branch,
           branch,
           summary,
           `${response}\n\nCloses #${issueId}`
@@ -315,26 +320,37 @@ Co-authored-by: ${actor} <${actor}@users.noreply.github.com>"`;
   return branch;
 }
 
-async function createPR(branch: string, title: string, body: string) {
+async function createPR(
+  base: string,
+  branch: string,
+  title: string,
+  body: string
+) {
   console.log("Creating pull request...");
-  const repoData = await octoRest.rest.repos.get({ owner, repo });
   const pr = await octoRest.rest.pulls.create({
     owner,
     repo,
     head: branch,
-    base: repoData.data.default_branch,
+    base,
     title,
     body: buildComment(body),
   });
   return pr.data.number;
 }
 
-async function runOpencode(prompt: string) {
+async function runOpencode(
+  prompt: string,
+  opts?: {
+    share?: boolean;
+  }
+) {
   console.log("Running opencode...");
+
   const promptPath = path.join(os.tmpdir(), "PROMPT");
   await Bun.write(promptPath, prompt);
-  const ret =
-    await $`cat ${promptPath} | opencode run -m ${process.env.INPUT_MODEL}`;
+  const ret = await $`cat ${promptPath} | opencode run -m ${
+    process.env.INPUT_MODEL
+  } ${opts?.share ? "--share" : ""}`;
   return ret.stdout.toString().trim();
 }
 
@@ -342,6 +358,10 @@ async function branchIsDirty() {
   console.log("Checking if branch is dirty...");
   const ret = await $`git status --porcelain`;
   return ret.stdout.toString().trim().length > 0;
+}
+
+async function fetchRepo() {
+  return await octoRest.rest.repos.get({ owner, repo });
 }
 
 async function fetchIssue() {

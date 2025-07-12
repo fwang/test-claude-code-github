@@ -5,16 +5,13 @@ branding:
   color: "orange"
 
 inputs:
-  # opencode arguments
   model:
-    description: "Model to use (provider-specific format required for Bedrock/Vertex)"
+    description: "Model to use"
     required: false
 
-  # Action settings
-  timeout_minutes:
-    description: "Timeout in minutes for opencode execution"
+  share:
+    description: "Share the opencode session (defaults to true for public repos)"
     required: false
-    default: "10"
 
 outputs:
   share_url:
@@ -51,6 +48,7 @@ runs:
         bun run ${GITHUB_ACTION_PATH}/src/index.ts
       env:
         INPUT_MODEL: ${{ inputs.model }}
+        INPUT_SHARE: ${{ inputs.share }}
 
     #- name: Testing
     #  shell: bash

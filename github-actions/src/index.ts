@@ -57,8 +57,6 @@ async function run() {
     octoGraph = graphql.defaults({
       headers: { authorization: `token ${appToken}` },
     });
-    // TODO
-    await revokeAppToken();
 
     await configureGit(appToken);
     await assertPermissions();

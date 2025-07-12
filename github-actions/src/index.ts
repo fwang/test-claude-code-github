@@ -31,6 +31,7 @@ let octoRest: Octokit;
 let octoGraph: typeof graphql;
 let commentId: number;
 let gitCredentials: string;
+let shareUrl: string | undefined;
 let state:
   | {
       type: "issue";
@@ -87,14 +88,18 @@ async function run() {
     if (state.type === "local-pr") await checkoutLocalBranch(state.pr);
     else if (state.type === "fork-pr") await checkoutForkBranch(state.pr);
 
+    // Prompt
+    const share = process.env.INPUT_SHARE === "true" || !repoData.data.private;
     const promptData =
       state.type === "issue"
         ? buildPromptDataForIssue(state.issue)
         : buildPromptDataForPR(state.pr);
     const response = await runOpencode(`${userPrompt}\n\n${promptData}`, {
-      share: process.env.INPUT_SHARE === "true" || !repoData.data.private,
+      share,
     });
+    shareUrl = response.match(/https:\/\/opencode\.ai\/s\/\w+/)?.[0];
 
+    // Comment and push changes
     if (await branchIsDirty()) {
       const summary =
         (await runOpencode(
@@ -245,14 +250,14 @@ async function assertPermissions() {
     throw new Error(`User ${actor} does not have write permissions`);
 }
 
-function buildComment(content: string, opts?: { share?: string }) {
+function buildComment(content: string) {
   const runId = process.env.GITHUB_RUN_ID!;
-  const runLink = `/${owner}/${repo}/actions/runs/${runId}`;
+  const runLUrl = `/${owner}/${repo}/actions/runs/${runId}`;
   return [
     content,
     "",
-    opts?.share ? `[shared session](${opts?.share}) | ` : "",
-    `[view run](${runLink})`,
+    shareUrl ? `[shared session](${shareUrl}) | ` : "",
+    `[view run](${runLUrl})`,
   ].join("\n");
 }
 

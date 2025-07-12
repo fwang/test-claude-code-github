@@ -82,7 +82,9 @@ async function run() {
     } else {
       await updateComment(response);
     }
+    await restoreGitConfig();
   } catch (e: any) {
+    await restoreGitConfig();
     console.error(e);
     let msg = e;
     if (e instanceof $.ShellError) {
@@ -94,8 +96,6 @@ async function run() {
     core.setFailed(`opencode failed with error: ${msg}`);
     // Also output the clean error message for the action to capture
     //core.setOutput("prepare_error", e.message);
-  } finally {
-    await restoreGitConfig();
     process.exit(1);
   }
 }

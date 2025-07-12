@@ -219,6 +219,9 @@ async function checkoutPR(pr: GitHubPullRequest) {
   const depth = Math.max(commitCount, 20);
   await $`git fetch origin --depth=${depth} ${branchName}`;
   await $`git checkout ${branchName}`;
+  // TODO
+  console.log(pr);
+  throw new Error("manual");
 }
 
 async function pushToCurrentBranch(summary: string) {

@@ -1,8 +1,8 @@
 {
-  "name": "@good-notes/scripts",
+  "name": "@bad-notes/scripts",
   "version": "0.0.0",
   "dependencies": {
-    "@good-notes/core": "*",
+    "@bad-notes/core": "*",
     "sst": "*"
   },
   "scripts": {

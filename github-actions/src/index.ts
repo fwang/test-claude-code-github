@@ -45,15 +45,6 @@ async function run() {
       headers: { authorization: `token ${appToken}` },
     });
     await configureGit(appToken);
-
-    //    await $`git remote set-url origin https://x-access-token:${appToken}@github.com/${owner}/${repo}.git`;
-    //
-    await Bun.write("abc.json", "{}");
-    await $`git add .`;
-    await $`git commit -m abc`;
-    await $`git push`;
-    throw new Error("manual");
-
     await assertPermissions();
 
     const comment = await createComment("opencode started...");

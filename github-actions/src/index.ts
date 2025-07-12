@@ -94,18 +94,24 @@ async function run() {
       state.type === "issue"
         ? buildPromptDataForIssue(state.issue)
         : buildPromptDataForPR(state.pr);
-    const response = await runOpencode(`${userPrompt}\n\n${promptData}`, {
+    const responseRet = await runOpencode(`${userPrompt}\n\n${promptData}`, {
       share,
     });
-    shareUrl = response.match(/https:\/\/opencode\.ai\/s\/\w+/)?.[0];
+    // TODO
+    console.log(responseRet);
+
+    const response = responseRet.stdout;
+    shareUrl = responseRet.stderr.match(/https:\/\/opencode\.ai\/s\/\w+/)?.[0];
 
     // Comment and push changes
     if (await branchIsDirty()) {
       const summary =
-        (await runOpencode(
-          `Summarize the following in less than 40 characters:\n\n${response}`,
-          { share: false }
-        )) || `Fix issue: ${payload.issue.title}`;
+        (
+          await runOpencode(
+            `Summarize the following in less than 40 characters:\n\n${response}`,
+            { share: false }
+          )
+        )?.stdout || `Fix issue: ${payload.issue.title}`;
 
       if (state.type === "issue") {
         const branch = await pushToNewBranch(summary);
@@ -252,12 +258,13 @@ async function assertPermissions() {
 
 function buildComment(content: string) {
   const runId = process.env.GITHUB_RUN_ID!;
-  const runLUrl = `/${owner}/${repo}/actions/runs/${runId}`;
+  const runUrl = `/${owner}/${repo}/actions/runs/${runId}`;
   return [
     content,
     "",
-    shareUrl ? `[shared session](${shareUrl}) | ` : "",
-    `[view run](${runLUrl})`,
+    `${process.env.INPUT_MODEL} | `,
+    shareUrl ? `[view session](${shareUrl}) | ` : "",
+    `[view log](${runUrl})`,
   ].join("\n");
 }
 
@@ -356,7 +363,10 @@ async function runOpencode(
   const ret = await $`cat ${promptPath} | opencode run -m ${
     process.env.INPUT_MODEL
   } ${opts?.share ? "--share" : ""}`;
-  return ret.stdout.toString().trim();
+  return {
+    stdout: ret.stdout.toString().trim(),
+    stderr: ret.stderr.toString().trim(),
+  };
 }
 
 async function branchIsDirty() {

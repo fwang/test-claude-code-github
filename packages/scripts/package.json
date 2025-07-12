@@ -1,8 +1,8 @@
 {
-  "name": "@jay-notes/scripts",
+  "name": "@jj-notes/scripts",
   "version": "0.0.0",
   "dependencies": {
-    "@jay-notes/core": "*",
+    "@jj-notes/core": "*",
     "sst": "*"
   },
   "scripts": {

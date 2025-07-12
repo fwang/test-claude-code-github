@@ -1,5 +1,5 @@
 {
-  "name": "jay-notes",
+  "name": "jj-notes",
   "version": "0.0.0",
   "workspaces": [
     "packages/*"

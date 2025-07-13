@@ -17,7 +17,7 @@ jobs:
           fetch-depth: 1
 
       - name: Run opencode
-        uses: fwang/test-claude-code-github/github-actions
+        uses: fwang/test-claude-code-github/github-actions@main
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         with:

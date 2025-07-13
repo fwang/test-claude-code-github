@@ -97,8 +97,6 @@ async function run() {
     const responseRet = await runOpencode(`${userPrompt}\n\n${promptData}`, {
       share,
     });
-    // TODO
-    console.log(responseRet);
 
     const response = responseRet.stdout;
     shareUrl = responseRet.stderr.match(/https:\/\/opencode\.ai\/s\/\w+/)?.[0];

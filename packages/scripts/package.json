@@ -1,8 +1,8 @@
 {
-  "name": "@bad-notes/scripts",
+  "name": "@haha-notes/scripts",
   "version": "0.0.0",
   "dependencies": {
-    "@bad-notes/core": "*",
+    "@haha-notes/core": "*",
     "sst": "*"
   },
   "scripts": {

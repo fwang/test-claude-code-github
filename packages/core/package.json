@@ -1,5 +1,5 @@
 {
-  "name": "@bad-notes/core",
+  "name": "@haha-notes/core",
   "version": "0.0.0",
   "scripts": {
     "test": "sst shell vitest"

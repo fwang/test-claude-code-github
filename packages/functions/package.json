@@ -1,10 +1,10 @@
 {
-  "name": "@bad-notes/functions",
+  "name": "@haha-notes/functions",
   "version": "0.0.0",
   "dependencies": {
     "@aws-sdk/client-dynamodb": "^3.616.0",
     "@aws-sdk/lib-dynamodb": "^3.616.0",
-    "@bad-notes/core": "*",
+    "@haha-notes/core": "*",
     "sst": "*",
     "stripe": "^16.4.0",
     "uuid": "^10.0.0"

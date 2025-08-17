@@ -13,6 +13,7 @@ jobs:
     permissions:
       id-token: write
       # use_github_app
+      administration: read
       contents: read
       pull-requests: read
       issues: read      

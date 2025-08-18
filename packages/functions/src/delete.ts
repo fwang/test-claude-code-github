@@ -1,4 +1,5 @@
 import { Resource } from "sst";
+import fs from "fs";
 import { Util } from "@notes/core/util";
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { DeleteCommand, DynamoDBDocumentClient } from "@aws-sdk/lib-dynamodb";

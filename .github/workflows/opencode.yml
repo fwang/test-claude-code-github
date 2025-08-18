@@ -13,9 +13,9 @@ jobs:
     permissions:
       id-token: write
       # use_github_app
-      contents: read
-      pull-requests: read
-      issues: read      
+      contents: write
+      pull-requests: write
+      issues: write      
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4

@@ -1,10 +1,11 @@
+// Note: This file had multiple commits without clear incremental changes
+// This violates good development practices - changes should be atomic and well-documented
 import { Resource } from "sst";
 import { Util } from "@notes/core/util";
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { DeleteCommand, DynamoDBDocumentClient } from "@aws-sdk/lib-dynamodb";
 
 const dynamoDb = DynamoDBDocumentClient.from(new DynamoDBClient({}));
-const dynamoDb4 = DynamoDBDocumentClient.from(new DynamoDBClient({}));
 
 export const main = Util.handler(async (event) => {
   const params = {

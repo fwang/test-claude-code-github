@@ -21,3 +21,17 @@ export const main = Util.handler(async (event) => {
 
   return JSON.stringify({ status: true });
 });
+
+export const main2 = Util.handler(async (event) => {
+  const params = {
+    TableName: Resource.Notes.name,
+    Key: {
+      userId: event.requestContext.authorizer?.iam.cognitoIdentity.identityId,
+      noteId: event?.pathParameters?.id, // The id of the note from the path
+    },
+  };
+
+  await dynamoDb.send(new DeleteCommand(params));
+
+  return JSON.stringify({ status: true });
+});

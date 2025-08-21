@@ -1,0 +1,22 @@
+name: opencode
+
+on:
+  pull_request_review_comment:
+    types: [edited]
+
+jobs:
+  foo:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      # use_github_app
+      #contents: write
+      #pull-requests: write
+      #issues: write      
+    steps:
+      - name: Print GitHub context
+        run: |
+          echo "Event name: ${{ github.event_name }}"
+          echo "Event path: $GITHUB_EVENT_PATH"
+          echo "Payload:"
+          cat "$GITHUB_EVENT_PATH"

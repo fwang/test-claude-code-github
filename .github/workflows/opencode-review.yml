@@ -1,30 +1,24 @@
 name: opencode
 
 on:
-  issue_comment:
-    types: [created]
-  pull_request_review_comment:
+  pull_request:
     types: [created]
 
 jobs:
-  opencode:
-    if: |
-      contains(github.event.comment.body, '/oc') ||
-      contains(github.event.comment.body, '/opencode')
+  opencode-review:
     runs-on: ubuntu-latest
     permissions:
       id-token: write
       contents: read
       pull-requests: read
-      issues: read      
+      issues: read
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Run opencode
-        uses: sst/opencode/github@latest
+        uses: sst/opencode/github/review@latest
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         with:
           model: anthropic/claude-sonnet-4-20250514
-          #token: ${{ secrets.GITHUB_TOKEN }}

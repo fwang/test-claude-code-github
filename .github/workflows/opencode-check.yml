@@ -23,12 +23,11 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           model: anthropic/claude-sonnet-4-20250514
-          prompt: list all changed files in this pull request \#16
-#          prompt: |
-#            A pull request has been created or updated:
-#
-#            <pr-number>
-#            ${{ github.event.pull_request.number }}
-#            </pr-number>
-#
-#            Please check all the code changes in this pull request and make sure there is at least 1 image file. If there is no image files, fail this check.
+          prompt: |
+            A pull request has been created or updated:
+
+            <pr-number>
+            ${{ github.event.pull_request.number }}
+            </pr-number>
+
+            Please check all the code changes in this pull request and make sure there is at least 1 image file. If there is no image files, fail this check.

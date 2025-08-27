@@ -4,6 +4,7 @@ import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { DeleteCommand, DynamoDBDocumentClient } from "@aws-sdk/lib-dynamodb";
 
 const dynamoDb = DynamoDBDocumentClient.from(new DynamoDBClient({}));
+const dynamoDb4 = DynamoDBDocumentClient.from(new DynamoDBClient({}));
 
 export const main = Util.handler(async (event) => {
   const params = {

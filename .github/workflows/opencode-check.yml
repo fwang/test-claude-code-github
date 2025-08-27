@@ -22,4 +22,11 @@ jobs:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         with:
           model: anthropic/claude-sonnet-4-20250514
-          prompt: Check the current pull request's changed files. If the changed files do not contain at least 1 image file, fail this check.
+          prompt: |
+            A pull request has been created or updated:
+
+            <pr-number>
+            ${{ github.event.pull_request.number }}
+            </pr-number>
+
+            Please check all the code changes in this pull request and make sure there is at least 1 image file. If there is no image files, fail this check.

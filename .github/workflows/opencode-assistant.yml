@@ -1,4 +1,4 @@
-name: opencode
+name: opencode assistant
 
 on:
   issue_comment:
@@ -16,13 +16,13 @@ jobs:
       id-token: write
       contents: read
       pull-requests: read
-      issues: read      
+      issues: read
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Run opencode
-        uses: sst/opencode/github@github
+        uses: sst/opencode/github/assistant@github
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         with:

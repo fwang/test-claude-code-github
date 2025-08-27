@@ -1,8 +1,8 @@
-name: opencode review
+name: opencode check
 
 on:
   pull_request:
-    types: [created]
+    types: [created, synchronize, reopened]
 
 jobs:
   opencode-review:
@@ -17,8 +17,9 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Run opencode
-        uses: sst/opencode/github/review@github
+        uses: sst/opencode/github/run@github
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         with:
           model: anthropic/claude-sonnet-4-20250514
+          prompt: Changed files can only contain images

@@ -20,6 +20,7 @@ jobs:
         uses: sst/opencode/github/run@github
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           model: anthropic/claude-sonnet-4-20250514
           prompt: list all changed files in this pull request \#16

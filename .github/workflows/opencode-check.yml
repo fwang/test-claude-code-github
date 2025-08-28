@@ -2,7 +2,7 @@ name: opencode check
 
 on:
   pull_request:
-    types: [created, synchronize, reopened]
+    types: [opened, synchronize, reopened]
 
 jobs:
   opencode-check:

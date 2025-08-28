@@ -1,11 +1,11 @@
-name: opencode review
+name: PR code review
 
 on:
   pull_request:
     types: [created]
 
 jobs:
-  opencode-review:
+  review:
     runs-on: ubuntu-latest
     permissions:
       id-token: write

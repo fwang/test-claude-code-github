@@ -1,11 +1,11 @@
-name: opencode check
+name: PR contains image
 
 on:
   pull_request:
     types: [opened, synchronize, reopened]
 
 jobs:
-  opencode-check:
+  check:
     runs-on: ubuntu-latest
     permissions:
       id-token: write

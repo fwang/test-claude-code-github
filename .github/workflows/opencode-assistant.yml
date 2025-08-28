@@ -7,7 +7,7 @@ on:
     types: [created]
 
 jobs:
-  opencode-assistant:
+  assist:
     if: |
       contains(github.event.comment.body, '/oc') ||
       contains(github.event.comment.body, '/opencode')

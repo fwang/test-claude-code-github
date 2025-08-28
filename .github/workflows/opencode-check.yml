@@ -20,6 +20,7 @@ jobs:
         uses: sst/opencode/github/check@github
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           model: anthropic/claude-sonnet-4-20250514
           prompt: Please check all the code changes in this pull request and make sure there is at least 1 image file.
